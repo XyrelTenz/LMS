@@ -50,18 +50,33 @@ pub fn init_db() -> rusqlite::Result<Connection> {
         [],
     )?;
 
-    // Migration: Add status column to borrowings if it doesn't exist (for existing databases)
-    let _ = conn.execute("ALTER TABLE borrowings ADD COLUMN status TEXT NOT NULL DEFAULT 'Approved'", []);
+    // Migration: Add status column to borrowings if it doesn't exist
+    let _ = conn.execute(
+        "ALTER TABLE borrowings ADD COLUMN status TEXT NOT NULL DEFAULT 'Approved'",
+        [],
+    );
     let _ = conn.execute("ALTER TABLE books ADD COLUMN image_url TEXT", []);
-    let _ = conn.execute("ALTER TABLE books ADD COLUMN copies INTEGER NOT NULL DEFAULT 1", []);
+    let _ = conn.execute(
+        "ALTER TABLE books ADD COLUMN copies INTEGER NOT NULL DEFAULT 1",
+        [],
+    );
     let _ = conn.execute("ALTER TABLE borrowings ADD COLUMN due_date TEXT", []);
-    let _ = conn.execute("ALTER TABLE borrowings ADD COLUMN has_reminder INTEGER NOT NULL DEFAULT 0", []);
-    
-    // Fix existing due_dates if null (migration helper)
-    let _ = conn.execute("UPDATE borrowings SET due_date = borrow_date WHERE due_date IS NULL", []);
+    let _ = conn.execute(
+        "ALTER TABLE borrowings ADD COLUMN has_reminder INTEGER NOT NULL DEFAULT 0",
+        [],
+    );
+
+    // Fix existing due_dates if null
+    let _ = conn.execute(
+        "UPDATE borrowings SET due_date = borrow_date WHERE due_date IS NULL",
+        [],
+    );
 
     // Fix existing is_available values based on copies count
-    let _ = conn.execute("UPDATE books SET is_available = CASE WHEN copies > 1 THEN 1 ELSE 0 END", []);
+    let _ = conn.execute(
+        "UPDATE books SET is_available = CASE WHEN copies > 1 THEN 1 ELSE 0 END",
+        [],
+    );
 
     Ok(conn)
 }

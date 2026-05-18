@@ -1,0 +1,43 @@
+graph TD
+    %% Define Node Styles
+    classDef student fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+    classDef librarian fill:#efebe9,stroke:#4e342e,stroke-width:2px,color:#3e2723;
+    classDef system fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+    classDef startStop fill:#eceff1,stroke:#37474f,stroke-width:2px,color:#263238;
+
+    Start([START]):::startStop --> Auth{Select User Role}
+    
+    %% Student Path
+    Auth -->|Student| StudLogin[Login / Sign Up]:::student
+    StudLogin --> StudCatalog[Browse Book Catalog]:::student
+    StudCatalog --> CheckAvail{Is Book Copies > 1?}:::system
+    
+    CheckAvail -->|No| Lock[Catalog Label: LAST COPY IN USE<br>Requesting Disabled]:::system
+    CheckAvail -->|Yes| RequestBorrow[Click REQUEST TO BORROW]:::student
+    
+    RequestBorrow --> CheckActive{Does Student Have<br>Active/Pending Borrow?}:::system
+    CheckActive -->|Yes| BlockRequest[Alert: Block Request<br>Must return current book first]:::system
+    CheckActive -->|No| PendingState[Insert Borrow Request<br>State: Pending]:::system
+    
+    %% Librarian Path
+    Auth -->|Librarian| LibLogin[Login]:::librarian
+    LibLogin --> LibDashboard[Librarian Dashboard]:::librarian
+    LibDashboard --> LibApprovals[Manage Approvals Screen]:::librarian
+    
+    %% Approvals Pipeline
+    PendingState -.->|Triggers State Update| LibApprovals
+    LibApprovals --> ApproveCheck{Action: Approve Request?}:::librarian
+    
+    ApproveCheck -->|No| RejectBorrow[Reject Request<br>State: Rejected]:::librarian
+    ApproveCheck -->|Yes| PickDueDate[DatePicker: Select Custom Due Date<br>Default: 1 Day]:::librarian
+    
+    RejectBorrow --> RestockBook[Inventory Restored<br>copies = copies + 1]:::system
+    PickDueDate --> ActiveBorrow[Approved & Deducted<br>copies = copies - 1]:::system
+    
+    %% Returns Flow
+    ActiveBorrow --> LibBorrowers[Borrowers Management Grid]:::librarian
+    LibBorrowers --> SendReminder[Click Send Reminder]:::librarian
+    SendReminder --> StudentDashboard[Student: My Borrowings Screen]:::student
+    StudentDashboard --> ReturnBtn[Click RETURN Button]:::student
+    ReturnBtn --> ReturnConfirm[Process SQLite Return<br>copies = copies + 1<br>is_available = 1]:::system
+    ReturnConfirm --> Completed([Transaction Completed]):::startStop

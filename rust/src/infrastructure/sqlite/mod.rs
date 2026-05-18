@@ -55,12 +55,16 @@ pub fn init_db() -> rusqlite::Result<Connection> {
         "ALTER TABLE borrowings ADD COLUMN status TEXT NOT NULL DEFAULT 'Approved'",
         [],
     );
+
     let _ = conn.execute("ALTER TABLE books ADD COLUMN image_url TEXT", []);
+
     let _ = conn.execute(
         "ALTER TABLE books ADD COLUMN copies INTEGER NOT NULL DEFAULT 1",
         [],
     );
+
     let _ = conn.execute("ALTER TABLE borrowings ADD COLUMN due_date TEXT", []);
+
     let _ = conn.execute(
         "ALTER TABLE borrowings ADD COLUMN has_reminder INTEGER NOT NULL DEFAULT 0",
         [],

@@ -1416,6 +1416,7 @@ impl SseDecode for crate::domain::penalty::Penalty {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <String>::sse_decode(deserializer);
         let mut var_userId = <String>::sse_decode(deserializer);
+        let mut var_userName = <String>::sse_decode(deserializer);
         let mut var_borrowingId = <Option<String>>::sse_decode(deserializer);
         let mut var_amount = <f64>::sse_decode(deserializer);
         let mut var_reason = <String>::sse_decode(deserializer);
@@ -1424,6 +1425,7 @@ impl SseDecode for crate::domain::penalty::Penalty {
         return crate::domain::penalty::Penalty {
             id: var_id,
             user_id: var_userId,
+            user_name: var_userName,
             borrowing_id: var_borrowingId,
             amount: var_amount,
             reason: var_reason,
@@ -1736,6 +1738,7 @@ impl flutter_rust_bridge::IntoDart for crate::domain::penalty::Penalty {
         [
             self.id.into_into_dart().into_dart(),
             self.user_id.into_into_dart().into_dart(),
+            self.user_name.into_into_dart().into_dart(),
             self.borrowing_id.into_into_dart().into_dart(),
             self.amount.into_into_dart().into_dart(),
             self.reason.into_into_dart().into_dart(),
@@ -2053,6 +2056,7 @@ impl SseEncode for crate::domain::penalty::Penalty {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.id, serializer);
         <String>::sse_encode(self.user_id, serializer);
+        <String>::sse_encode(self.user_name, serializer);
         <Option<String>>::sse_encode(self.borrowing_id, serializer);
         <f64>::sse_encode(self.amount, serializer);
         <String>::sse_encode(self.reason, serializer);

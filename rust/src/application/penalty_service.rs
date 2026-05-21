@@ -7,12 +7,13 @@ use uuid::Uuid;
 pub fn get_user_penalties(user_id: String) -> Result<Vec<Penalty>, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
     let mut stmt = conn
-        .prepare("SELECT id, user_id, borrowing_id, amount, reason, is_paid, created_at FROM penalties WHERE user_id = ?1")
+        .prepare("SELECT penalties.id, penalties.user_id, penalties.borrowing_id, penalties.amount, penalties.reason, penalties.is_paid, penalties.created_at, users.full_name FROM penalties LEFT JOIN users ON users.id = penalties.user_id WHERE penalties.user_id = ?1")
         .map_err(|e| e.to_string())?;
 
     let penalties = stmt
         .query_map(params![user_id], |row| {
             Ok(Penalty {
+                user_name: row.get(7)?,
                 id: row.get(0)?,
                 user_id: row.get(1)?,
                 borrowing_id: row.get(2)?,
@@ -35,12 +36,15 @@ pub fn get_user_penalties(user_id: String) -> Result<Vec<Penalty>, String> {
 pub fn get_all_penalties() -> Result<Vec<Penalty>, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
     let mut stmt = conn
-        .prepare("SELECT id, user_id, borrowing_id, amount, reason, is_paid, created_at FROM penalties")
+        .prepare(
+            "SELECT penalties.id, penalties.user_id, penalties.borrowing_id, penalties.amount, penalties.reason, penalties.is_paid, penalties.created_at, users.full_name FROM penalties LEFT JOIN users ON users.id = penalties.user_id",
+        )
         .map_err(|e| e.to_string())?;
 
     let penalties = stmt
         .query_map([], |row| {
             Ok(Penalty {
+                user_name: row.get(7)?,
                 id: row.get(0)?,
                 user_id: row.get(1)?,
                 borrowing_id: row.get(2)?,
@@ -70,7 +74,12 @@ pub fn pay_penalty(penalty_id: String) -> Result<(), String> {
     Ok(())
 }
 
-pub fn create_penalty(user_id: String, borrowing_id: Option<String>, amount: f64, reason: String) -> Result<(), String> {
+pub fn create_penalty(
+    user_id: String,
+    borrowing_id: Option<String>,
+    amount: f64,
+    reason: String,
+) -> Result<(), String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
     let id = Uuid::new_v4().to_string();
     let created_at = Utc::now().to_rfc3339();
@@ -80,6 +89,6 @@ pub fn create_penalty(user_id: String, borrowing_id: Option<String>, amount: f64
         params![id, user_id, borrowing_id, amount, reason, created_at],
     )
     .map_err(|e| e.to_string())?;
-    
+
     Ok(())
 }

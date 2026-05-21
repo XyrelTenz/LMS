@@ -1,10 +1,11 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Penalty {
     pub id: String,
     pub user_id: String,
+    pub user_name: String,
     pub borrowing_id: Option<String>,
     pub amount: f64,
     pub reason: String,

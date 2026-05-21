@@ -31,7 +31,7 @@ pub fn get_all_books(limit: i32, offset: i32) -> Result<Vec<Book>, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
     let mut stmt = conn.prepare("SELECT id, title, author, publication_year, isbn, genre, copies, is_available, image_url, fine_fee, max_borrow_days FROM books LIMIT ?1 OFFSET ?2")
         .map_err(|e| e.to_string())?;
-    
+
     let books = stmt.query_map(params![limit, offset], |row| {
         Ok(Book {
             id: row.get(0)?,
@@ -58,7 +58,7 @@ pub fn search_books(query: String) -> Result<Vec<Book>, String> {
     let search_pattern = format!("%{}%", query);
     let mut stmt = conn.prepare("SELECT id, title, author, publication_year, isbn, genre, copies, is_available, image_url, fine_fee, max_borrow_days FROM books WHERE title LIKE ?1 OR author LIKE ?1 OR isbn LIKE ?1")
         .map_err(|e| e.to_string())?;
-    
+
     let books = stmt.query_map(params![search_pattern], |row| {
         Ok(Book {
             id: row.get(0)?,

@@ -9,6 +9,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 class Penalty {
   final String id;
   final String userId;
+  final String userName;
   final String? borrowingId;
   final double amount;
   final String reason;
@@ -18,6 +19,7 @@ class Penalty {
   const Penalty({
     required this.id,
     required this.userId,
+    required this.userName,
     this.borrowingId,
     required this.amount,
     required this.reason,
@@ -29,6 +31,7 @@ class Penalty {
   int get hashCode =>
       id.hashCode ^
       userId.hashCode ^
+      userName.hashCode ^
       borrowingId.hashCode ^
       amount.hashCode ^
       reason.hashCode ^
@@ -42,6 +45,7 @@ class Penalty {
           runtimeType == other.runtimeType &&
           id == other.id &&
           userId == other.userId &&
+          userName == other.userName &&
           borrowingId == other.borrowingId &&
           amount == other.amount &&
           reason == other.reason &&

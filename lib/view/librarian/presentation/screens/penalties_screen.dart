@@ -167,6 +167,11 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
+                        "Student Name: ${penalty.userName}",
+                        style: TextStyle(color: AppColors.textDark),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
                         "User ID: ${penalty.userId}",
                         style: TextStyle(color: AppColors.textLight),
                       ),
@@ -196,12 +201,22 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> {
                     child: const Text("Mark as Paid"),
                   )
                 else
-                  const Text(
-                    "PAID",
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: const Text(
+                      "PAID",
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
               ],

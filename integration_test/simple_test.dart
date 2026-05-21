@@ -9,7 +9,6 @@ void main() {
 
   testWidgets('Can initialize application', (WidgetTester tester) async {
     await tester.pumpWidget(const AppWidget());
-    // Basic verification that the app starts
     expect(find.byType(AppWidget), findsOneWidget);
   });
 }

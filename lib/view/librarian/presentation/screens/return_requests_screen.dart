@@ -140,7 +140,7 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
                   borderRadius: BorderRadius.zero,
                 ),
               ),
-              child: const Text("Reject & Apply Fee"),
+              child: const Text("Reject"),
             ),
           ],
         );
@@ -273,7 +273,7 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
                           borderRadius: BorderRadius.zero,
                         ),
                       ),
-                      child: const Text("Reject & Fee"),
+                      child: const Text("Decline"),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
@@ -291,7 +291,7 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
                           borderRadius: BorderRadius.zero,
                         ),
                       ),
-                      child: const Text("Approve Return"),
+                      child: const Text("Approve"),
                     ),
                   ],
                 ),

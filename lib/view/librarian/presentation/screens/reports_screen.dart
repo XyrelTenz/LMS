@@ -140,7 +140,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ElevatedButton.icon(
                 onPressed: _printBorrowedBooksReport,
                 icon: const Icon(Icons.print),
-                label: const Text("Print List"),
+                label: const Text("Print"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.textDark,
                   foregroundColor: Colors.white,
@@ -264,7 +264,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ElevatedButton.icon(
                 onPressed: _printActiveBorrowersReport,
                 icon: const Icon(Icons.print),
-                label: const Text("Print List"),
+                label: const Text("Print"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.textDark,
                   foregroundColor: Colors.white,

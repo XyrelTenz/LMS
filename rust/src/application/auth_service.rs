@@ -24,7 +24,6 @@ pub fn register(
     let password_hash =
         hash(password_plain, DEFAULT_COST).map_err(|_| "Hashing error".to_string())?;
 
-    // Use user-provided username as the ID
     let id = username.clone();
 
     conn.execute(

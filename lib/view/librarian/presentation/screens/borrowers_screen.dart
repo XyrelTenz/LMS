@@ -24,7 +24,11 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
   @override
   void initState() {
     super.initState();
-    _borrowerDataSource = BorrowerDataSource(borrowings: [], onRemind: (_) {});
+    _borrowerDataSource = BorrowerDataSource(
+      borrowings: [], 
+      onRemind: (_) {}, 
+      onForceReturn: (_) {}
+    );
     _loadData();
   }
 
@@ -58,6 +62,7 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
     _borrowerDataSource = BorrowerDataSource(
       borrowings: studentBorrowings,
       onRemind: (borrowing) => _remindStudent(borrowing),
+      onForceReturn: (borrowing) => _forceReturn(borrowing),
     );
   }
 
@@ -95,6 +100,66 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
     } catch (e) {
       if (!mounted) return;
       FeedbackUtils.show(context, title: "Reminder Failed", message: e.toString(), type: FeedbackType.error);
+    }
+  }
+
+  Future<void> _forceReturn(domain.Borrowing borrowing) async {
+    if (borrowing.returnStatus == domain.ReturnStatus.rejected) {
+      FeedbackUtils.show(
+        context,
+        title: "Force Return Blocked",
+        message:
+            "This return request was rejected.\nReason: ${borrowing.conditionNotes ?? 'Unknown'}\nPlease resolve the issue with the student before returning.",
+        type: FeedbackType.error,
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: const Text("Force Return Book"),
+        content: const Text(
+            "Are you sure you want to force return this book? This will bypass the student request flow."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Force Return"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await api.processReturn(
+        borrowingId: borrowing.id,
+        isApproved: true,
+        conditionNotes: "Forced return by librarian",
+      );
+      if (!mounted) return;
+      FeedbackUtils.show(
+        context,
+        title: "Book Returned",
+        message: "The book has been successfully marked as returned.",
+        type: FeedbackType.success,
+      );
+      _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      FeedbackUtils.show(
+        context,
+        title: "Return Failed",
+        message: e.toString(),
+        type: FeedbackType.error,
+      );
     }
   }
 
@@ -279,6 +344,7 @@ class BorrowerDataSource extends DataGridSource {
   BorrowerDataSource({
     required List<domain.Borrowing> borrowings,
     required this.onRemind,
+    required this.onForceReturn,
   }) {
     _dataGridRows = borrowings.map<DataGridRow>((b) {
       return DataGridRow(cells: [
@@ -295,6 +361,7 @@ class BorrowerDataSource extends DataGridSource {
   }
 
   final Function(domain.Borrowing) onRemind;
+  final Function(domain.Borrowing) onForceReturn;
   List<DataGridRow> _dataGridRows = [];
 
   @override
@@ -341,13 +408,23 @@ class BorrowerDataSource extends DataGridSource {
         ),
         Container(
           alignment: Alignment.center,
-          child: IconButton(
-            icon: Icon(
-              borrowing.hasReminder ? Icons.notifications_active : Icons.notifications_active_outlined,
-              color: borrowing.hasReminder ? Colors.orange : AppColors.primary,
-            ),
-            tooltip: borrowing.hasReminder ? "Reminder Sent" : "Send Reminder",
-            onPressed: () => onRemind(borrowing),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(
+                  borrowing.hasReminder ? Icons.notifications_active : Icons.notifications_active_outlined,
+                  color: borrowing.hasReminder ? Colors.orange : AppColors.primary,
+                ),
+                tooltip: borrowing.hasReminder ? "Reminder Sent" : "Send Reminder",
+                onPressed: () => onRemind(borrowing),
+              ),
+              IconButton(
+                icon: const Icon(Icons.assignment_return_outlined, color: Colors.green),
+                tooltip: "Force Return",
+                onPressed: () => onForceReturn(borrowing),
+              ),
+            ],
           ),
         ),
       ],

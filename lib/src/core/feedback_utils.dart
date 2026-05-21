@@ -5,7 +5,7 @@ enum FeedbackType { success, error, info, warning }
 
 class FeedbackUtils {
   /// Displays a premium custom modal for feedback instead of a standard SnackBar.
-  static void show(
+  static Future<T?> show<T>(
     BuildContext context, {
     required String message,
     String title = "Notification",
@@ -14,7 +14,7 @@ class FeedbackUtils {
     final Color primaryColor = _getColor(type);
     final IconData icon = _getIcon(type);
 
-    showDialog(
+    return showDialog<T>(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,

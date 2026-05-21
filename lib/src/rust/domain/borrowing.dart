@@ -19,6 +19,9 @@ class Borrowing {
   final bool isReturned;
   final BorrowStatus status;
   final bool hasReminder;
+  final ReturnStatus returnStatus;
+  final String? conditionNotes;
+  final String? bookTitle;
 
   const Borrowing({
     required this.id,
@@ -31,6 +34,9 @@ class Borrowing {
     required this.isReturned,
     required this.status,
     required this.hasReminder,
+    required this.returnStatus,
+    this.conditionNotes,
+    this.bookTitle,
   });
 
   @override
@@ -44,7 +50,10 @@ class Borrowing {
       returnDate.hashCode ^
       isReturned.hashCode ^
       status.hashCode ^
-      hasReminder.hashCode;
+      hasReminder.hashCode ^
+      returnStatus.hashCode ^
+      conditionNotes.hashCode ^
+      bookTitle.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -60,5 +69,10 @@ class Borrowing {
           returnDate == other.returnDate &&
           isReturned == other.isReturned &&
           status == other.status &&
-          hasReminder == other.hasReminder;
+          hasReminder == other.hasReminder &&
+          returnStatus == other.returnStatus &&
+          conditionNotes == other.conditionNotes &&
+          bookTitle == other.bookTitle;
 }
+
+enum ReturnStatus { none, pending, approved, rejected }

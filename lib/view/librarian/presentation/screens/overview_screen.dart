@@ -27,7 +27,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     try {
       final report = await api.generateReport();
-      final books = await api.getAllBooks();
+      final books = await api.getAllBooks(limit: 10000, offset: 0);
+      final users = await api.getAllUsers();
       setState(() {
         _report = report;
         _recentBooks = books.take(5).toList(); // Just take top 5 for recent

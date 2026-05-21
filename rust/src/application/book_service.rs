@@ -4,23 +4,35 @@ use rusqlite::params;
 use uuid::Uuid;
 
 /// Adds a new book to the database with a unique ID and initial available status.
-pub fn add_book(title: String, author: String, publication_year: i32, isbn: String, genre: String, copies: i32, image_url: Option<String>) -> Result<(), String> {
+pub fn add_book(
+    title: String,
+    author: String,
+    publication_year: i32,
+    isbn: String,
+    genre: String,
+    copies: i32,
+    image_url: Option<String>,
+    fine_fee: f64,
+    max_borrow_days: i32,
+) -> Result<(), String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
     let id = Uuid::new_v4().to_string();
+    let is_available = copies > 0;
+
     conn.execute(
-        "INSERT INTO books (id, title, author, publication_year, isbn, genre, copies, is_available, image_url) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8)",
-        params![id, title, author, publication_year, isbn, genre, copies, image_url],
+        "INSERT INTO books (id, title, author, publication_year, isbn, genre, copies, is_available, image_url, fine_fee, max_borrow_days) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+        params![id, title, author, publication_year, isbn, genre, copies, is_available as i32, image_url, fine_fee, max_borrow_days],
     ).map_err(|e| e.to_string())?;
     Ok(())
 }
 
-/// Retrieves all books from the library catalog.
-pub fn get_all_books() -> Result<Vec<Book>, String> {
+/// Retrieves all books from the library catalog with pagination.
+pub fn get_all_books(limit: i32, offset: i32) -> Result<Vec<Book>, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT id, title, author, publication_year, isbn, genre, copies, is_available, image_url FROM books")
+    let mut stmt = conn.prepare("SELECT id, title, author, publication_year, isbn, genre, copies, is_available, image_url, fine_fee, max_borrow_days FROM books LIMIT ?1 OFFSET ?2")
         .map_err(|e| e.to_string())?;
     
-    let books = stmt.query_map([], |row| {
+    let books = stmt.query_map(params![limit, offset], |row| {
         Ok(Book {
             id: row.get(0)?,
             title: row.get(1)?,
@@ -31,6 +43,8 @@ pub fn get_all_books() -> Result<Vec<Book>, String> {
             copies: row.get(6)?,
             is_available: row.get::<_, i32>(7)? == 1,
             image_url: row.get(8)?,
+            fine_fee: row.get(9)?,
+            max_borrow_days: row.get(10)?,
         })
     }).map_err(|e| e.to_string())?
     .collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
@@ -42,7 +56,7 @@ pub fn get_all_books() -> Result<Vec<Book>, String> {
 pub fn search_books(query: String) -> Result<Vec<Book>, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
     let search_pattern = format!("%{}%", query);
-    let mut stmt = conn.prepare("SELECT id, title, author, publication_year, isbn, genre, copies, is_available, image_url FROM books WHERE title LIKE ?1 OR author LIKE ?1 OR isbn LIKE ?1")
+    let mut stmt = conn.prepare("SELECT id, title, author, publication_year, isbn, genre, copies, is_available, image_url, fine_fee, max_borrow_days FROM books WHERE title LIKE ?1 OR author LIKE ?1 OR isbn LIKE ?1")
         .map_err(|e| e.to_string())?;
     
     let books = stmt.query_map(params![search_pattern], |row| {
@@ -56,6 +70,8 @@ pub fn search_books(query: String) -> Result<Vec<Book>, String> {
             copies: row.get(6)?,
             is_available: row.get::<_, i32>(7)? == 1,
             image_url: row.get(8)?,
+            fine_fee: row.get(9)?,
+            max_borrow_days: row.get(10)?,
         })
     }).map_err(|e| e.to_string())?
     .collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
@@ -67,8 +83,20 @@ pub fn search_books(query: String) -> Result<Vec<Book>, String> {
 pub fn update_book(book: Book) -> Result<(), String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
     conn.execute(
-        "UPDATE books SET title = ?1, author = ?2, publication_year = ?3, isbn = ?4, genre = ?5, copies = ?6, image_url = ?7 WHERE id = ?8",
-        params![book.title, book.author, book.publication_year, book.isbn, book.genre, book.copies, book.image_url, book.id],
+        "UPDATE books SET title = ?1, author = ?2, publication_year = ?3, isbn = ?4, genre = ?5, copies = ?6, is_available = ?7, image_url = ?8, fine_fee = ?9, max_borrow_days = ?10 WHERE id = ?11",
+        params![
+            book.title,
+            book.author,
+            book.publication_year,
+            book.isbn,
+            book.genre,
+            book.copies,
+            book.is_available as i32,
+            book.image_url,
+            book.fine_fee,
+            book.max_borrow_days,
+            book.id
+        ],
     ).map_err(|e| e.to_string())?;
     Ok(())
 }

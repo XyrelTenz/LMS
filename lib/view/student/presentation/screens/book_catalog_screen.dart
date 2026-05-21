@@ -18,6 +18,9 @@ class _BookCatalogScreenState extends State<BookCatalogScreen> {
   bool _isLoading = true;
   final _searchController = TextEditingController();
   String _sortBy = 'Title';
+  int _currentPage = 0;
+  final int _limit = 10;
+  bool _hasMore = true;
 
   @override
   void initState() {
@@ -25,11 +28,25 @@ class _BookCatalogScreenState extends State<BookCatalogScreen> {
     _loadBooks();
   }
 
-  Future<void> _loadBooks() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadBooks({bool loadMore = false}) async {
+    if (!loadMore) {
+      setState(() {
+        _isLoading = true;
+        _currentPage = 0;
+        _hasMore = true;
+        _books.clear();
+      });
+    }
+
     try {
-      final books = await api.getAllBooks();
-      setState(() => _books = books);
+      final books = await api.getAllBooks(limit: _limit, offset: _currentPage * _limit);
+      if (!mounted) return;
+      setState(() {
+        if (books.length < _limit) {
+          _hasMore = false;
+        }
+        _books.addAll(books);
+      });
     } catch (e) {
       if (!mounted) return;
       FeedbackUtils.show(
@@ -78,11 +95,70 @@ class _BookCatalogScreenState extends State<BookCatalogScreen> {
       return;
     }
 
+    int selectedDays = 7;
+    final maxDays = book.maxBorrowDays;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: const Text("Borrow Duration"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("How many days would you like to borrow '${book.title}'?"),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text("Days: "),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Slider(
+                      value: selectedDays.toDouble(),
+                      min: 1,
+                      max: maxDays.toDouble(),
+                      divisions: maxDays > 1 ? maxDays - 1 : 1,
+                      label: selectedDays.toString(),
+                      onChanged: (val) {
+                        setModalState(() {
+                          selectedDays = val.toInt();
+                        });
+                      },
+                    ),
+                  ),
+                  Text(
+                    "$selectedDays / $maxDays",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text("Request Borrow"),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirm != true) return;
+
     try {
       await api.borrowBook(
         userId: user['id'],
         userName: user['full_name'],
         bookId: book.id,
+        borrowDays: selectedDays,
       );
       if (!mounted) return;
       FeedbackUtils.show(
@@ -313,7 +389,7 @@ class _BookCatalogScreenState extends State<BookCatalogScreen> {
           _buildSearchAndActions(),
           const SizedBox(height: 32),
           Expanded(
-            child: _isLoading
+            child: _isLoading && _books.isEmpty
                 ? const Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
@@ -321,6 +397,19 @@ class _BookCatalogScreenState extends State<BookCatalogScreen> {
                 ? _buildEmptyState()
                 : _buildBooksGrid(),
           ),
+          if (_hasMore && _searchController.text.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    _currentPage++;
+                    _loadBooks(loadMore: true);
+                  },
+                  child: const Text("Load More"),
+                ),
+              ),
+            ),
         ],
       ),
     );

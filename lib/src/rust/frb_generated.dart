@@ -8,11 +8,13 @@ import 'api/book_api.dart';
 import 'api/borrowing_api.dart';
 import 'api/camera_api.dart';
 import 'api/face_api.dart';
+import 'api/penalty_api.dart';
 import 'api/report_api.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'domain/book.dart';
 import 'domain/borrowing.dart';
+import 'domain/penalty.dart';
 import 'domain/report.dart';
 import 'domain/user.dart';
 import 'frb_generated.dart';
@@ -75,7 +77,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1438500847;
+  int get rustContentHash => 2010143214;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -95,6 +97,8 @@ abstract class RustLibApi extends BaseApi {
     required String genre,
     required int copies,
     String? imageUrl,
+    required double fineFee,
+    required int maxBorrowDays,
   });
 
   Future<void> crateApiBorrowingApiApproveBorrowing({
@@ -106,6 +110,7 @@ abstract class RustLibApi extends BaseApi {
     required String userId,
     required String userName,
     required String bookId,
+    required int borrowDays,
   });
 
   Future<Uint8List> crateApiCameraApiCaptureFrame();
@@ -114,9 +119,14 @@ abstract class RustLibApi extends BaseApi {
 
   Future<LibraryReport> crateApiReportApiGenerateReport();
 
-  Future<List<Book>> crateApiBookApiGetAllBooks();
+  Future<List<Book>> crateApiBookApiGetAllBooks({
+    required int limit,
+    required int offset,
+  });
 
   Future<List<Borrowing>> crateApiBorrowingApiGetAllBorrowings();
+
+  Future<List<Penalty>> crateApiPenaltyApiGetAllPenalties();
 
   Future<List<User>> crateApiAuthApiGetAllUsers();
 
@@ -128,6 +138,10 @@ abstract class RustLibApi extends BaseApi {
 
   Future<User> crateApiAuthApiGetUserById({required String id});
 
+  Future<List<Penalty>> crateApiPenaltyApiGetUserPenalties({
+    required String userId,
+  });
+
   Future<void> crateApiInitApp();
 
   Future<void> crateApiCameraApiInitCamera();
@@ -135,6 +149,15 @@ abstract class RustLibApi extends BaseApi {
   Future<User> crateApiAuthApiLoginUser({
     required String identifier,
     required String passwordPlain,
+  });
+
+  Future<void> crateApiPenaltyApiPayPenalty({required String penaltyId});
+
+  Future<void> crateApiBorrowingApiProcessReturn({
+    required String borrowingId,
+    required bool isApproved,
+    String? conditionNotes,
+    double? feeAmount,
   });
 
   Future<void> crateApiFaceApiRegisterFace({
@@ -155,13 +178,13 @@ abstract class RustLibApi extends BaseApi {
     required String borrowingId,
   });
 
+  Future<void> crateApiBorrowingApiRequestReturn({required String borrowingId});
+
   Future<void> crateApiAuthApiResetPassword({
     required String username,
     required String securityAnswer,
     required String newPasswordPlain,
   });
-
-  Future<void> crateApiBorrowingApiReturnBook({required String borrowingId});
 
   Future<List<Book>> crateApiBookApiSearchBooks({required String query});
 
@@ -193,6 +216,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String genre,
     required int copies,
     String? imageUrl,
+    required double fineFee,
+    required int maxBorrowDays,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -205,6 +230,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(genre, serializer);
           sse_encode_i_32(copies, serializer);
           sse_encode_opt_String(imageUrl, serializer);
+          sse_encode_f_64(fineFee, serializer);
+          sse_encode_i_32(maxBorrowDays, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -225,6 +252,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           genre,
           copies,
           imageUrl,
+          fineFee,
+          maxBorrowDays,
         ],
         apiImpl: this,
       ),
@@ -241,6 +270,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       "genre",
       "copies",
       "imageUrl",
+      "fineFee",
+      "maxBorrowDays",
     ],
   );
 
@@ -284,6 +315,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String userId,
     required String userName,
     required String bookId,
+    required int borrowDays,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -292,6 +324,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(userId, serializer);
           sse_encode_String(userName, serializer);
           sse_encode_String(bookId, serializer);
+          sse_encode_i_32(borrowDays, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -304,7 +337,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiBorrowingApiBorrowBookConstMeta,
-        argValues: [userId, userName, bookId],
+        argValues: [userId, userName, bookId, borrowDays],
         apiImpl: this,
       ),
     );
@@ -313,7 +346,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiBorrowingApiBorrowBookConstMeta =>
       const TaskConstMeta(
         debugName: "borrow_book",
-        argNames: ["userId", "userName", "bookId"],
+        argNames: ["userId", "userName", "bookId", "borrowDays"],
       );
 
   @override
@@ -399,11 +432,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "generate_report", argNames: []);
 
   @override
-  Future<List<Book>> crateApiBookApiGetAllBooks() {
+  Future<List<Book>> crateApiBookApiGetAllBooks({
+    required int limit,
+    required int offset,
+  }) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_i_32(limit, serializer);
+          sse_encode_i_32(offset, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -416,14 +454,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiBookApiGetAllBooksConstMeta,
-        argValues: [],
+        argValues: [limit, offset],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiBookApiGetAllBooksConstMeta =>
-      const TaskConstMeta(debugName: "get_all_books", argNames: []);
+  TaskConstMeta get kCrateApiBookApiGetAllBooksConstMeta => const TaskConstMeta(
+    debugName: "get_all_books",
+    argNames: ["limit", "offset"],
+  );
 
   @override
   Future<List<Borrowing>> crateApiBorrowingApiGetAllBorrowings() {
@@ -453,7 +493,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "get_all_borrowings", argNames: []);
 
   @override
-  Future<List<User>> crateApiAuthApiGetAllUsers() {
+  Future<List<Penalty>> crateApiPenaltyApiGetAllPenalties() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -462,6 +502,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             generalizedFrbRustBinding,
             serializer,
             funcId: 9,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_penalty,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiPenaltyApiGetAllPenaltiesConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiPenaltyApiGetAllPenaltiesConstMeta =>
+      const TaskConstMeta(debugName: "get_all_penalties", argNames: []);
+
+  @override
+  Future<List<User>> crateApiAuthApiGetAllUsers() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 10,
             port: port_,
           );
         },
@@ -488,7 +555,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 11,
             port: port_,
           );
         },
@@ -518,7 +585,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 12,
             port: port_,
           );
         },
@@ -549,7 +616,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 13,
             port: port_,
           );
         },
@@ -568,6 +635,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "get_user_by_id", argNames: ["id"]);
 
   @override
+  Future<List<Penalty>> crateApiPenaltyApiGetUserPenalties({
+    required String userId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(userId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 14,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_penalty,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiPenaltyApiGetUserPenaltiesConstMeta,
+        argValues: [userId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiPenaltyApiGetUserPenaltiesConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_user_penalties",
+        argNames: ["userId"],
+      );
+
+  @override
   Future<void> crateApiInitApp() {
     return handler.executeNormal(
       NormalTask(
@@ -576,7 +676,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 13,
+            funcId: 15,
             port: port_,
           );
         },
@@ -603,7 +703,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 14,
+            funcId: 16,
             port: port_,
           );
         },
@@ -635,7 +735,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 15,
+            funcId: 17,
             port: port_,
           );
         },
@@ -656,6 +756,73 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
+  Future<void> crateApiPenaltyApiPayPenalty({required String penaltyId}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(penaltyId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 18,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiPenaltyApiPayPenaltyConstMeta,
+        argValues: [penaltyId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiPenaltyApiPayPenaltyConstMeta =>
+      const TaskConstMeta(debugName: "pay_penalty", argNames: ["penaltyId"]);
+
+  @override
+  Future<void> crateApiBorrowingApiProcessReturn({
+    required String borrowingId,
+    required bool isApproved,
+    String? conditionNotes,
+    double? feeAmount,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(borrowingId, serializer);
+          sse_encode_bool(isApproved, serializer);
+          sse_encode_opt_String(conditionNotes, serializer);
+          sse_encode_opt_box_autoadd_f_64(feeAmount, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 19,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiBorrowingApiProcessReturnConstMeta,
+        argValues: [borrowingId, isApproved, conditionNotes, feeAmount],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiBorrowingApiProcessReturnConstMeta =>
+      const TaskConstMeta(
+        debugName: "process_return",
+        argNames: ["borrowingId", "isApproved", "conditionNotes", "feeAmount"],
+      );
+
+  @override
   Future<void> crateApiFaceApiRegisterFace({
     required String userId,
     required List<int> imageBytes,
@@ -669,7 +836,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 20,
             port: port_,
           );
         },
@@ -712,7 +879,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 17,
+            funcId: 21,
             port: port_,
           );
         },
@@ -759,7 +926,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 18,
+            funcId: 22,
             port: port_,
           );
         },
@@ -781,6 +948,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiBorrowingApiRequestReturn({
+    required String borrowingId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(borrowingId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 23,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiBorrowingApiRequestReturnConstMeta,
+        argValues: [borrowingId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiBorrowingApiRequestReturnConstMeta =>
+      const TaskConstMeta(
+        debugName: "request_return",
+        argNames: ["borrowingId"],
+      );
+
+  @override
   Future<void> crateApiAuthApiResetPassword({
     required String username,
     required String securityAnswer,
@@ -796,7 +996,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 19,
+            funcId: 24,
             port: port_,
           );
         },
@@ -818,34 +1018,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiBorrowingApiReturnBook({required String borrowingId}) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(borrowingId, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 20,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_String,
-        ),
-        constMeta: kCrateApiBorrowingApiReturnBookConstMeta,
-        argValues: [borrowingId],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiBorrowingApiReturnBookConstMeta =>
-      const TaskConstMeta(debugName: "return_book", argNames: ["borrowingId"]);
-
-  @override
   Future<List<Book>> crateApiBookApiSearchBooks({required String query}) {
     return handler.executeNormal(
       NormalTask(
@@ -855,7 +1027,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 25,
             port: port_,
           );
         },
@@ -883,7 +1055,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 26,
             port: port_,
           );
         },
@@ -913,7 +1085,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 23,
+            funcId: 27,
             port: port_,
           );
         },
@@ -941,7 +1113,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 24,
+            funcId: 28,
             port: port_,
           );
         },
@@ -969,7 +1141,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 25,
+            funcId: 29,
             port: port_,
           );
         },
@@ -997,7 +1169,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 26,
+            funcId: 30,
             port: port_,
           );
         },
@@ -1054,8 +1226,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Book dco_decode_book(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 9)
-      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
     return Book(
       id: dco_decode_String(arr[0]),
       title: dco_decode_String(arr[1]),
@@ -1066,6 +1238,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       copies: dco_decode_i_32(arr[6]),
       isAvailable: dco_decode_bool(arr[7]),
       imageUrl: dco_decode_opt_String(arr[8]),
+      fineFee: dco_decode_f_64(arr[9]),
+      maxBorrowDays: dco_decode_i_32(arr[10]),
     );
   }
 
@@ -1085,8 +1259,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Borrowing dco_decode_borrowing(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 10)
-      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
+    if (arr.length != 13)
+      throw Exception('unexpected arr length: expect 13 but see ${arr.length}');
     return Borrowing(
       id: dco_decode_String(arr[0]),
       bookId: dco_decode_String(arr[1]),
@@ -1098,6 +1272,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       isReturned: dco_decode_bool(arr[7]),
       status: dco_decode_borrow_status(arr[8]),
       hasReminder: dco_decode_bool(arr[9]),
+      returnStatus: dco_decode_return_status(arr[10]),
+      conditionNotes: dco_decode_opt_String(arr[11]),
+      bookTitle: dco_decode_opt_String(arr[12]),
     );
   }
 
@@ -1114,9 +1291,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  double dco_decode_box_autoadd_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
+  }
+
+  @protected
   User dco_decode_box_autoadd_user(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_user(raw);
+  }
+
+  @protected
+  double dco_decode_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
   }
 
   @protected
@@ -1168,6 +1357,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<Penalty> dco_decode_list_penalty(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_penalty).toList();
+  }
+
+  @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as List<int>;
@@ -1204,6 +1399,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  double? dco_decode_opt_box_autoadd_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_f_64(raw);
+  }
+
+  @protected
+  Penalty dco_decode_penalty(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    return Penalty(
+      id: dco_decode_String(arr[0]),
+      userId: dco_decode_String(arr[1]),
+      borrowingId: dco_decode_opt_String(arr[2]),
+      amount: dco_decode_f_64(arr[3]),
+      reason: dco_decode_String(arr[4]),
+      isPaid: dco_decode_bool(arr[5]),
+      createdAt: dco_decode_Chrono_Utc(arr[6]),
+    );
+  }
+
+  @protected
   (String, int) dco_decode_record_string_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -1211,6 +1429,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       throw Exception('Expected 2 elements, got ${arr.length}');
     }
     return (dco_decode_String(arr[0]), dco_decode_i_32(arr[1]));
+  }
+
+  @protected
+  ReturnStatus dco_decode_return_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ReturnStatus.values[raw as int];
   }
 
   @protected
@@ -1301,6 +1525,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_copies = sse_decode_i_32(deserializer);
     var var_isAvailable = sse_decode_bool(deserializer);
     var var_imageUrl = sse_decode_opt_String(deserializer);
+    var var_fineFee = sse_decode_f_64(deserializer);
+    var var_maxBorrowDays = sse_decode_i_32(deserializer);
     return Book(
       id: var_id,
       title: var_title,
@@ -1311,6 +1537,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       copies: var_copies,
       isAvailable: var_isAvailable,
       imageUrl: var_imageUrl,
+      fineFee: var_fineFee,
+      maxBorrowDays: var_maxBorrowDays,
     );
   }
 
@@ -1340,6 +1568,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_isReturned = sse_decode_bool(deserializer);
     var var_status = sse_decode_borrow_status(deserializer);
     var var_hasReminder = sse_decode_bool(deserializer);
+    var var_returnStatus = sse_decode_return_status(deserializer);
+    var var_conditionNotes = sse_decode_opt_String(deserializer);
+    var var_bookTitle = sse_decode_opt_String(deserializer);
     return Borrowing(
       id: var_id,
       bookId: var_bookId,
@@ -1351,6 +1582,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       isReturned: var_isReturned,
       status: var_status,
       hasReminder: var_hasReminder,
+      returnStatus: var_returnStatus,
+      conditionNotes: var_conditionNotes,
+      bookTitle: var_bookTitle,
     );
   }
 
@@ -1367,9 +1601,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_f_64(deserializer));
+  }
+
+  @protected
   User sse_decode_box_autoadd_user(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_user(deserializer));
+  }
+
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getFloat64();
   }
 
   @protected
@@ -1446,6 +1692,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<Penalty> sse_decode_list_penalty(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <Penalty>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_penalty(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
@@ -1510,11 +1768,50 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_f_64(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  Penalty sse_decode_penalty(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_userId = sse_decode_String(deserializer);
+    var var_borrowingId = sse_decode_opt_String(deserializer);
+    var var_amount = sse_decode_f_64(deserializer);
+    var var_reason = sse_decode_String(deserializer);
+    var var_isPaid = sse_decode_bool(deserializer);
+    var var_createdAt = sse_decode_Chrono_Utc(deserializer);
+    return Penalty(
+      id: var_id,
+      userId: var_userId,
+      borrowingId: var_borrowingId,
+      amount: var_amount,
+      reason: var_reason,
+      isPaid: var_isPaid,
+      createdAt: var_createdAt,
+    );
+  }
+
+  @protected
   (String, int) sse_decode_record_string_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_field0 = sse_decode_String(deserializer);
     var var_field1 = sse_decode_i_32(deserializer);
     return (var_field0, var_field1);
+  }
+
+  @protected
+  ReturnStatus sse_decode_return_status(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return ReturnStatus.values[inner];
   }
 
   @protected
@@ -1610,6 +1907,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.copies, serializer);
     sse_encode_bool(self.isAvailable, serializer);
     sse_encode_opt_String(self.imageUrl, serializer);
+    sse_encode_f_64(self.fineFee, serializer);
+    sse_encode_i_32(self.maxBorrowDays, serializer);
   }
 
   @protected
@@ -1637,6 +1936,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.isReturned, serializer);
     sse_encode_borrow_status(self.status, serializer);
     sse_encode_bool(self.hasReminder, serializer);
+    sse_encode_return_status(self.returnStatus, serializer);
+    sse_encode_opt_String(self.conditionNotes, serializer);
+    sse_encode_opt_String(self.bookTitle, serializer);
   }
 
   @protected
@@ -1655,9 +1957,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_f_64(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_user(User self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_user(self, serializer);
+  }
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putFloat64(self);
   }
 
   @protected
@@ -1715,6 +2029,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_borrowing(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_penalty(List<Penalty> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_penalty(item, serializer);
     }
   }
 
@@ -1785,6 +2108,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_f_64(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_penalty(Penalty self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.userId, serializer);
+    sse_encode_opt_String(self.borrowingId, serializer);
+    sse_encode_f_64(self.amount, serializer);
+    sse_encode_String(self.reason, serializer);
+    sse_encode_bool(self.isPaid, serializer);
+    sse_encode_Chrono_Utc(self.createdAt, serializer);
+  }
+
+  @protected
   void sse_encode_record_string_i_32(
     (String, int) self,
     SseSerializer serializer,
@@ -1792,6 +2137,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.$1, serializer);
     sse_encode_i_32(self.$2, serializer);
+  }
+
+  @protected
+  void sse_encode_return_status(ReturnStatus self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
   }
 
   @protected

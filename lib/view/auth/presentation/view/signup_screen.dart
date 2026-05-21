@@ -22,6 +22,8 @@ class _SignupScreenState extends State<SignupScreen> {
   String _selectedRole = "Student";
   String _selectedQuestion = "What is your pet's name?";
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureSecurityAnswer = true;
   String? _fullNameError;
   String? _usernameError;
   String? _passwordError;
@@ -43,7 +45,9 @@ class _SignupScreenState extends State<SignupScreen> {
           : null;
       _usernameError = _usernameController.text.isEmpty
           ? "ID/Email is required"
-          : null;
+          : (!isLibrarian && _usernameController.text.length != 5)
+              ? "Student ID must be exactly 5 digits"
+              : null;
       _passwordError = _passwordController.text.isEmpty
           ? "Password is required"
           : null;
@@ -73,13 +77,14 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       if (!mounted) return;
 
-      FeedbackUtils.show(
+      await FeedbackUtils.show(
         context,
         title: "Success!",
         message:
             "Your account has been created successfully. You can now log in.",
         type: FeedbackType.success,
       );
+      if (!mounted) return;
       context.pop();
     } catch (e) {
       setState(() {
@@ -164,7 +169,15 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       const SizedBox(height: 40),
-
+                      _buildDropdownField(
+                        label: "Role",
+                        icon: Icons.work_outline,
+                        value: _selectedRole,
+                        items: const ["Student", "Librarian"],
+                        onChanged: (val) =>
+                            setState(() => _selectedRole = val!),
+                      ),
+                      const SizedBox(height: 16),
                       Row(
                         children: [
                           Expanded(
@@ -196,18 +209,17 @@ class _SignupScreenState extends State<SignupScreen> {
                         label: "Password",
                         icon: Icons.lock_outline,
                         isPassword: true,
+                        obscureText: _obscurePassword,
+                        onToggleVisibility: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                         errorText: _passwordError,
                       ),
                       const SizedBox(height: 16),
 
-                      _buildDropdownField(
-                        label: "Role",
-                        icon: Icons.work_outline,
-                        value: _selectedRole,
-                        items: ["Student", "Librarian"],
-                        onChanged: (val) =>
-                            setState(() => _selectedRole = val!),
-                      ),
+
 
                       if (_selectedRole == "Student") ...[
                         const SizedBox(height: 16),
@@ -225,6 +237,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: "Security Answer",
                           icon: Icons.question_answer_outlined,
                           isPassword: true,
+                          obscureText: _obscureSecurityAnswer,
+                          onToggleVisibility: () {
+                            setState(() {
+                              _obscureSecurityAnswer = !_obscureSecurityAnswer;
+                            });
+                          },
                           errorText: _securityAnswerError,
                         ),
                       ],
@@ -365,6 +383,8 @@ class _SignupScreenState extends State<SignupScreen> {
     required String label,
     required IconData icon,
     bool isPassword = false,
+    bool obscureText = false,
+    VoidCallback? onToggleVisibility,
     String? errorText,
   }) {
     return Column(
@@ -381,14 +401,14 @@ class _SignupScreenState extends State<SignupScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          obscureText: isPassword,
+          obscureText: isPassword ? obscureText : false,
           keyboardType: label == "School ID"
               ? TextInputType.number
               : (label == "Full Name"
                     ? TextInputType.name
                     : TextInputType.text),
           inputFormatters: label == "School ID"
-              ? [FilteringTextInputFormatter.digitsOnly]
+              ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(5)]
               : [],
           style: const TextStyle(color: AppColors.textDark),
           decoration: InputDecoration(
@@ -403,6 +423,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   ? AppColors.error
                   : AppColors.primary.withValues(alpha: 0.7),
             ),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: AppColors.textLight,
+                    ),
+                    onPressed: onToggleVisibility,
+                  )
+                : null,
             filled: true,
             fillColor: AppColors.surface.withValues(alpha: 0.3),
             border: const OutlineInputBorder(

@@ -22,8 +22,11 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
   bool _isLoading = true;
   final _searchController = TextEditingController();
   String _sortBy = 'Title';
+  int _currentPage = 0;
+  final int _limit = 10;
+  bool _hasMore = true;
 
-  static const List<String> GENRES = [
+  static const List<String> genres = [
     'Science',
     'Mathematics',
     'Fiction',
@@ -37,12 +40,25 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     _loadBooks();
   }
 
-  /// Fetches the full list of books from the backend.
-  Future<void> _loadBooks() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadBooks({bool loadMore = false}) async {
+    if (!loadMore) {
+      setState(() {
+        _isLoading = true;
+        _currentPage = 0;
+        _hasMore = true;
+        _books.clear();
+      });
+    }
+
     try {
-      final books = await api.getAllBooks();
-      setState(() => _books = books);
+      final books = await api.getAllBooks(limit: _limit, offset: _currentPage * _limit);
+      if (!mounted) return;
+      setState(() {
+        if (books.length < _limit) {
+          _hasMore = false;
+        }
+        _books.addAll(books);
+      });
     } catch (e) {
       if (!mounted) return;
       FeedbackUtils.show(
@@ -145,8 +161,9 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     double? width,
     BoxFit fit = BoxFit.cover,
   }) {
-    if (pathOrUrl == null || pathOrUrl.isEmpty)
+    if (pathOrUrl == null || pathOrUrl.isEmpty) {
       return _buildImagePlaceholder(height: height, width: width);
+    }
 
     if (pathOrUrl.startsWith('http')) {
       return Image.network(
@@ -154,7 +171,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
         height: height,
         width: width,
         fit: fit,
-        errorBuilder: (context, _, __) =>
+        errorBuilder: (context, _, _) =>
             _buildImagePlaceholder(height: height, width: width),
       );
     } else {
@@ -165,7 +182,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
           height: height,
           width: width,
           fit: fit,
-          errorBuilder: (context, _, __) =>
+          errorBuilder: (context, _, _) =>
               _buildImagePlaceholder(height: height, width: width),
         );
       }
@@ -185,23 +202,27 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     final copiesController = TextEditingController(
       text: (book?.copies ?? 1).toString(),
     );
+    final fineFeeController = TextEditingController(
+      text: (book?.fineFee ?? 0.0).toString(),
+    );
+    final maxBorrowDaysController = TextEditingController(
+      text: (book?.maxBorrowDays ?? 7).toString(),
+    );
     final imageController = TextEditingController(text: book?.imageUrl);
-    String selectedGenre = book != null && GENRES.contains(book.genre) ? book.genre : GENRES.first;
+    String selectedGenre = book != null && genres.contains(book.genre)
+        ? book.genre
+        : genres.first;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           titlePadding: EdgeInsets.zero,
           contentPadding: EdgeInsets.zero,
           content: Container(
             width: 700,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.zero,
-            ),
+            decoration: const BoxDecoration(borderRadius: BorderRadius.zero),
             child: SingleChildScrollView(
               child: Column(
                 children: [
@@ -302,11 +323,15 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[50],
                                   borderRadius: BorderRadius.zero,
-                                  border: Border.all(color: Colors.grey.shade300),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButtonFormField<String>(
@@ -314,9 +339,20 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                                     decoration: const InputDecoration(
                                       labelText: "Genre",
                                       border: InputBorder.none,
-                                      prefixIcon: Icon(Icons.category_outlined, size: 20, color: AppColors.primary),
+                                      prefixIcon: Icon(
+                                        Icons.category_outlined,
+                                        size: 20,
+                                        color: AppColors.primary,
+                                      ),
                                     ),
-                                    items: GENRES.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                                    items: genres
+                                        .map(
+                                          (g) => DropdownMenuItem(
+                                            value: g,
+                                            child: Text(g),
+                                          ),
+                                        )
+                                        .toList(),
                                     onChanged: (val) {
                                       if (val != null) {
                                         setModalState(() {
@@ -352,10 +388,32 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildInputField(
+                                copiesController,
+                                "Number of Copies",
+                                Icons.inventory_2_outlined,
+                                isNumber: true,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildInputField(
+                                maxBorrowDaysController,
+                                "Max Borrow Days",
+                                Icons.timer_outlined,
+                                isNumber: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         _buildInputField(
-                          copiesController,
-                          "Number of Copies",
-                          Icons.inventory_2_outlined,
+                          fineFeeController,
+                          "Fine Fee Amount (\$)",
+                          Icons.attach_money_outlined,
                           isNumber: true,
                         ),
                         const SizedBox(height: 16),
@@ -382,6 +440,29 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                             const SizedBox(width: 12),
                             ElevatedButton(
                               onPressed: () async {
+                                final titleText = titleController.text.trim();
+                                final authorText = authorController.text.trim();
+                                if (titleText.isEmpty || authorText.isEmpty) {
+                                  FeedbackUtils.show(
+                                    context,
+                                    title: "Validation Error",
+                                    message: "Book Title and Author cannot be empty.",
+                                    type: FeedbackType.error,
+                                  );
+                                  return;
+                                }
+
+                                final isbnText = isbnController.text.trim();
+                                if (isbnText.length != 13 || double.tryParse(isbnText) == null) {
+                                  FeedbackUtils.show(
+                                    context,
+                                    title: "Validation Error",
+                                    message: "ISBN must be exactly 13 digits long.",
+                                    type: FeedbackType.error,
+                                  );
+                                  return;
+                                }
+
                                 try {
                                   if (book == null) {
                                     await api.addBook(
@@ -398,6 +479,8 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                                       imageUrl: imageController.text.isEmpty
                                           ? null
                                           : imageController.text,
+                                      fineFee: double.tryParse(fineFeeController.text) ?? 0.0,
+                                      maxBorrowDays: int.tryParse(maxBorrowDaysController.text) ?? 7,
                                     );
                                   } else {
                                     await api.updateBook(
@@ -419,6 +502,8 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                                         imageUrl: imageController.text.isEmpty
                                             ? null
                                             : imageController.text,
+                                        fineFee: double.tryParse(fineFeeController.text) ?? book.fineFee,
+                                        maxBorrowDays: int.tryParse(maxBorrowDaysController.text) ?? book.maxBorrowDays,
                                       ),
                                     );
                                   }
@@ -441,13 +526,13 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                                   vertical: 12,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.zero,
                                 ),
                                 backgroundColor: AppColors.primary,
                               ),
                               child: const Text(
                                 "Save Book",
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                style: TextStyle(fontWeight: FontWeight.w600),
                               ),
                             ),
                           ],
@@ -520,9 +605,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         title: const Text("Delete Book"),
         content: const Text(
           "Are you sure you want to delete this book? This action cannot be undone.",
@@ -571,7 +654,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
           _buildSearchAndActions(),
           const SizedBox(height: 32),
           Expanded(
-            child: _isLoading
+            child: _isLoading && _books.isEmpty
                 ? const Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
@@ -579,6 +662,19 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                 ? _buildEmptyState()
                 : _buildBooksGrid(),
           ),
+          if (_hasMore && _searchController.text.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    _currentPage++;
+                    _loadBooks(loadMore: true);
+                  },
+                  child: const Text("Load More"),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -666,10 +762,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                 ),
                 focusedBorder: const OutlineInputBorder(
                   borderRadius: BorderRadius.zero,
-                  borderSide: BorderSide(
-                    color: AppColors.primary,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide(color: AppColors.primary, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -952,15 +1045,15 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     String text;
 
     if (copies <= 1) {
-      bgColor = Colors.red.withOpacity(0.1);
+      bgColor = Colors.red.withValues(alpha: 0.1);
       textColor = Colors.red;
       text = "Last copy";
     } else if (copies <= 3) {
-      bgColor = Colors.amber.withOpacity(0.1);
+      bgColor = Colors.amber.withValues(alpha: 0.1);
       textColor = Colors.amber[700]!;
       text = "$copies copies";
     } else {
-      bgColor = Colors.blue.withOpacity(0.1);
+      bgColor = Colors.blue.withValues(alpha: 0.1);
       textColor = Colors.blue;
       text = "$copies copies";
     }
@@ -970,7 +1063,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.zero,
-        border: Border.all(color: textColor.withOpacity(0.3)),
+        border: Border.all(color: textColor.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,

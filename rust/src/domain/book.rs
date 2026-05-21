@@ -11,4 +11,6 @@ pub struct Book {
     pub copies: i32,
     pub is_available: bool,
     pub image_url: Option<String>,
+    pub fine_fee: f64,
+    pub max_borrow_days: i32,
 }

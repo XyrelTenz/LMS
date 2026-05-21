@@ -2,13 +2,33 @@ use crate::application::book_service;
 pub use crate::domain::book::Book;
 
 /// Adds a new book to the library catalog.
-pub fn add_book(title: String, author: String, publication_year: i32, isbn: String, genre: String, copies: i32, image_url: Option<String>) -> Result<(), String> {
-    book_service::add_book(title, author, publication_year, isbn, genre, copies, image_url)
+pub fn add_book(
+    title: String,
+    author: String,
+    publication_year: i32,
+    isbn: String,
+    genre: String,
+    copies: i32,
+    image_url: Option<String>,
+    fine_fee: f64,
+    max_borrow_days: i32,
+) -> Result<(), String> {
+    book_service::add_book(
+        title,
+        author,
+        publication_year,
+        isbn,
+        genre,
+        copies,
+        image_url,
+        fine_fee,
+        max_borrow_days,
+    )
 }
 
-/// Retrieves the complete list of books in the library.
-pub fn get_all_books() -> Result<Vec<Book>, String> {
-    book_service::get_all_books()
+/// Retrieves a paginated list of books in the library.
+pub fn get_all_books(limit: i32, offset: i32) -> Result<Vec<Book>, String> {
+    book_service::get_all_books(limit, offset)
 }
 
 /// Searches for books matching the given title, author, or ISBN.

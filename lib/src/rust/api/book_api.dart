@@ -16,6 +16,8 @@ Future<void> addBook({
   required String genre,
   required int copies,
   String? imageUrl,
+  required double fineFee,
+  required int maxBorrowDays,
 }) => RustLib.instance.api.crateApiBookApiAddBook(
   title: title,
   author: author,
@@ -24,11 +26,16 @@ Future<void> addBook({
   genre: genre,
   copies: copies,
   imageUrl: imageUrl,
+  fineFee: fineFee,
+  maxBorrowDays: maxBorrowDays,
 );
 
-/// Retrieves the complete list of books in the library.
-Future<List<Book>> getAllBooks() =>
-    RustLib.instance.api.crateApiBookApiGetAllBooks();
+/// Retrieves a paginated list of books in the library.
+Future<List<Book>> getAllBooks({required int limit, required int offset}) =>
+    RustLib.instance.api.crateApiBookApiGetAllBooks(
+      limit: limit,
+      offset: offset,
+    );
 
 /// Searches for books matching the given title, author, or ISBN.
 Future<List<Book>> searchBooks({required String query}) =>

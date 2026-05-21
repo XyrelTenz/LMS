@@ -2,6 +2,36 @@ use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum ReturnStatus {
+    None,
+    Pending,
+    Approved,
+    Rejected,
+}
+
+impl ToString for ReturnStatus {
+    fn to_string(&self) -> String {
+        match self {
+            ReturnStatus::None => "None".to_string(),
+            ReturnStatus::Pending => "Pending".to_string(),
+            ReturnStatus::Approved => "Approved".to_string(),
+            ReturnStatus::Rejected => "Rejected".to_string(),
+        }
+    }
+}
+
+impl From<String> for ReturnStatus {
+    fn from(s: String) -> Self {
+        match s.as_str() {
+            "Pending" => ReturnStatus::Pending,
+            "Approved" => ReturnStatus::Approved,
+            "Rejected" => ReturnStatus::Rejected,
+            _ => ReturnStatus::None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum BorrowStatus {
     Pending,
     Approved,
@@ -40,4 +70,7 @@ pub struct Borrowing {
     pub is_returned: bool,
     pub status: BorrowStatus,
     pub has_reminder: bool,
+    pub return_status: ReturnStatus,
+    pub condition_notes: Option<String>,
+    pub book_title: Option<String>,
 }

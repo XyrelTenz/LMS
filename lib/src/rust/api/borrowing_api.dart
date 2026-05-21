@@ -7,20 +7,37 @@ import '../domain/borrowing.dart';
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// Initiates a borrow request for a book by a student.
+/// Submits a request for a student to borrow a specific book.
 Future<void> borrowBook({
   required String userId,
   required String userName,
   required String bookId,
+  required int borrowDays,
 }) => RustLib.instance.api.crateApiBorrowingApiBorrowBook(
   userId: userId,
   userName: userName,
   bookId: bookId,
+  borrowDays: borrowDays,
 );
 
-/// Finalizes the return of a borrowed book.
-Future<void> returnBook({required String borrowingId}) => RustLib.instance.api
-    .crateApiBorrowingApiReturnBook(borrowingId: borrowingId);
+/// Initiates a return request for a borrowed book.
+Future<void> requestReturn({required String borrowingId}) => RustLib
+    .instance
+    .api
+    .crateApiBorrowingApiRequestReturn(borrowingId: borrowingId);
+
+/// Librarian processes the return request, either approving or rejecting with condition notes and potential fees.
+Future<void> processReturn({
+  required String borrowingId,
+  required bool isApproved,
+  String? conditionNotes,
+  double? feeAmount,
+}) => RustLib.instance.api.crateApiBorrowingApiProcessReturn(
+  borrowingId: borrowingId,
+  isApproved: isApproved,
+  conditionNotes: conditionNotes,
+  feeAmount: feeAmount,
+);
 
 /// Fetches all borrowing records for a specific user.
 Future<List<Borrowing>> getUserBorrowings({required String userId}) =>

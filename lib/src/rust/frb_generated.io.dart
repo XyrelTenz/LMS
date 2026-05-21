@@ -8,12 +8,14 @@ import 'api/book_api.dart';
 import 'api/borrowing_api.dart';
 import 'api/camera_api.dart';
 import 'api/face_api.dart';
+import 'api/penalty_api.dart';
 import 'api/report_api.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'domain/book.dart';
 import 'domain/borrowing.dart';
+import 'domain/penalty.dart';
 import 'domain/report.dart';
 import 'domain/user.dart';
 import 'frb_generated.dart';
@@ -58,7 +60,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Book dco_decode_box_autoadd_book(dynamic raw);
 
   @protected
+  double dco_decode_box_autoadd_f_64(dynamic raw);
+
+  @protected
   User dco_decode_box_autoadd_user(dynamic raw);
+
+  @protected
+  double dco_decode_f_64(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -79,6 +87,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Borrowing> dco_decode_list_borrowing(dynamic raw);
 
   @protected
+  List<Penalty> dco_decode_list_penalty(dynamic raw);
+
+  @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
 
   @protected
@@ -97,7 +108,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DateTime? dco_decode_opt_box_autoadd_Chrono_Utc(dynamic raw);
 
   @protected
+  double? dco_decode_opt_box_autoadd_f_64(dynamic raw);
+
+  @protected
+  Penalty dco_decode_penalty(dynamic raw);
+
+  @protected
   (String, int) dco_decode_record_string_i_32(dynamic raw);
+
+  @protected
+  ReturnStatus dco_decode_return_status(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -144,7 +164,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Book sse_decode_box_autoadd_book(SseDeserializer deserializer);
 
   @protected
+  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer);
+
+  @protected
   User sse_decode_box_autoadd_user(SseDeserializer deserializer);
+
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
@@ -167,6 +193,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Borrowing> sse_decode_list_borrowing(SseDeserializer deserializer);
 
   @protected
+  List<Penalty> sse_decode_list_penalty(SseDeserializer deserializer);
+
+  @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
 
   @protected
@@ -187,7 +216,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DateTime? sse_decode_opt_box_autoadd_Chrono_Utc(SseDeserializer deserializer);
 
   @protected
+  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer);
+
+  @protected
+  Penalty sse_decode_penalty(SseDeserializer deserializer);
+
+  @protected
   (String, int) sse_decode_record_string_i_32(SseDeserializer deserializer);
+
+  @protected
+  ReturnStatus sse_decode_return_status(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -241,7 +279,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_book(Book self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_user(User self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -266,6 +310,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     List<Borrowing> self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_list_penalty(List<Penalty> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
@@ -295,10 +342,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_penalty(Penalty self, SseSerializer serializer);
+
+  @protected
   void sse_encode_record_string_i_32(
     (String, int) self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_return_status(ReturnStatus self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);

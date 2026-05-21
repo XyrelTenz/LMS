@@ -28,9 +28,14 @@ class _SigninScreenState extends State<SigninScreen> {
 
   Future<void> _handleLogin() async {
     setState(() {
-      _identifierError = _identifierController.text.isEmpty
-          ? "This field is required"
-          : null;
+      if (_identifierController.text.isEmpty) {
+        _identifierError = "This field is required";
+      } else if (_selectedRole == "Student" && _identifierController.text.length != 5) {
+        _identifierError = "Student ID must be exactly 5 digits";
+      } else {
+        _identifierError = null;
+      }
+      
       _passwordError = _passwordController.text.isEmpty
           ? "Password is required"
           : null;
@@ -362,7 +367,10 @@ class _SigninScreenState extends State<SigninScreen> {
               ? TextInputType.number
               : TextInputType.emailAddress,
           inputFormatters: label.contains("ID")
-              ? <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly]
+              ? <TextInputFormatter>[
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(5),
+                ]
               : <TextInputFormatter>[],
           style: const TextStyle(color: AppColors.textDark),
           decoration: InputDecoration(

@@ -44,14 +44,14 @@ class _MyBorrowingsScreenState extends State<MyBorrowingsScreen> {
     }
   }
 
-  Future<void> _returnBook(String borrowingId) async {
+  Future<void> _requestReturn(String borrowingId) async {
     try {
-      await api.returnBook(borrowingId: borrowingId);
+      await api.requestReturn(borrowingId: borrowingId);
       if (!mounted) return;
       FeedbackUtils.show(
         context,
-        title: "Book Returned",
-        message: "You have successfully returned the book. Thank you!",
+        title: "Return Requested",
+        message: "You have requested to return the book. Please bring it to the librarian.",
         type: FeedbackType.success,
       );
       _loadBorrowings();
@@ -217,18 +217,26 @@ class _MyBorrowingsScreenState extends State<MyBorrowingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Book ID: ${borrowing.bookId}",
+                      borrowing.bookTitle ?? "Unknown Title",
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         color: AppColors.textDark,
                       ),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Book ID: ${borrowing.bookId}",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight.withValues(alpha: 0.8),
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Text(
-                          "Due: ${DateFormat('MMM d, y • HH:mm').format(borrowing.dueDate.toLocal())}",
+                          "Due: ${DateFormat('MMM dd, yyyy').format(borrowing.dueDate.toLocal())}",
                           style: TextStyle(
                             color: isOverdue
                                 ? AppColors.error
@@ -261,9 +269,9 @@ class _MyBorrowingsScreenState extends State<MyBorrowingsScreen> {
               const SizedBox(width: 20),
               if (!borrowing.isReturned &&
                   borrowing.status == domain.BorrowStatus.approved &&
-                  borrowing.hasReminder)
+                  borrowing.returnStatus == domain.ReturnStatus.none)
                 ElevatedButton(
-                  onPressed: () => _returnBook(borrowing.id),
+                  onPressed: () => _requestReturn(borrowing.id),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     shape: const RoundedRectangleBorder(
@@ -274,7 +282,58 @@ class _MyBorrowingsScreenState extends State<MyBorrowingsScreen> {
                       vertical: 12,
                     ),
                   ),
-                  child: const Text("RETURN"),
+                  child: const Text("REQUEST RETURN"),
+                )
+              else if (!borrowing.isReturned &&
+                  borrowing.status == domain.BorrowStatus.approved &&
+                  borrowing.returnStatus == domain.ReturnStatus.pending)
+                const Text(
+                  "Return Pending\nPlease see Librarian",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                )
+              else if (!borrowing.isReturned &&
+                  borrowing.status == domain.BorrowStatus.approved &&
+                  borrowing.returnStatus == domain.ReturnStatus.rejected)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      "Return Rejected",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (borrowing.conditionNotes != null)
+                      Text(
+                        borrowing.conditionNotes!,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 10,
+                        ),
+                      ),
+                    const SizedBox(height: 4),
+                    ElevatedButton(
+                      onPressed: () => _requestReturn(borrowing.id),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.zero,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: const Text("REQUEST AGAIN", style: TextStyle(fontSize: 12)),
+                    )
+                  ],
                 )
               else if (borrowing.isReturned)
                 const Text(

@@ -19,9 +19,3 @@ void main() async {
 
   runApp(const AppWidget());
 }
-
-//TODO: Number of copies of book
-//TODO: Add category 5
-//TODO: List of books that borrow
-//TODO: Remove Approved status on students
-//TODO: Librarian can set due date time or set day when approving borrow request

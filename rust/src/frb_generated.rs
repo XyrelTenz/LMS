@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1438500847;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 2010143214;
 
 // Section: executor
 
@@ -75,6 +75,8 @@ fn wire__crate__api__book_api__add_book_impl(
             let api_genre = <String>::sse_decode(&mut deserializer);
             let api_copies = <i32>::sse_decode(&mut deserializer);
             let api_image_url = <Option<String>>::sse_decode(&mut deserializer);
+            let api_fine_fee = <f64>::sse_decode(&mut deserializer);
+            let api_max_borrow_days = <i32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
@@ -86,6 +88,8 @@ fn wire__crate__api__book_api__add_book_impl(
                         api_genre,
                         api_copies,
                         api_image_url,
+                        api_fine_fee,
+                        api_max_borrow_days,
                     )?;
                     Ok(output_ok)
                 })())
@@ -155,6 +159,7 @@ fn wire__crate__api__borrowing_api__borrow_book_impl(
             let api_user_id = <String>::sse_decode(&mut deserializer);
             let api_user_name = <String>::sse_decode(&mut deserializer);
             let api_book_id = <String>::sse_decode(&mut deserializer);
+            let api_borrow_days = <i32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
@@ -162,6 +167,7 @@ fn wire__crate__api__borrowing_api__borrow_book_impl(
                         api_user_id,
                         api_user_name,
                         api_book_id,
+                        api_borrow_days,
                     )?;
                     Ok(output_ok)
                 })())
@@ -291,10 +297,12 @@ fn wire__crate__api__book_api__get_all_books_impl(
             };
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_limit = <i32>::sse_decode(&mut deserializer);
+            let api_offset = <i32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::book_api::get_all_books()?;
+                    let output_ok = crate::api::book_api::get_all_books(api_limit, api_offset)?;
                     Ok(output_ok)
                 })())
             }
@@ -327,6 +335,38 @@ fn wire__crate__api__borrowing_api__get_all_borrowings_impl(
             move |context| {
                 transform_result_sse::<_, String>((move || {
                     let output_ok = crate::api::borrowing_api::get_all_borrowings()?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__penalty_api__get_all_penalties_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_all_penalties",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::penalty_api::get_all_penalties()?;
                     Ok(output_ok)
                 })())
             }
@@ -463,6 +503,39 @@ fn wire__crate__api__auth_api__get_user_by_id_impl(
         },
     )
 }
+fn wire__crate__api__penalty_api__get_user_penalties_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_user_penalties",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_user_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::penalty_api::get_user_penalties(api_user_id)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__init_app_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -561,6 +634,80 @@ fn wire__crate__api__auth_api__login_user_impl(
                 transform_result_sse::<_, String>((move || {
                     let output_ok =
                         crate::api::auth_api::login_user(api_identifier, api_password_plain)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__penalty_api__pay_penalty_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "pay_penalty",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_penalty_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::penalty_api::pay_penalty(api_penalty_id)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__borrowing_api__process_return_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "process_return",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_borrowing_id = <String>::sse_decode(&mut deserializer);
+            let api_is_approved = <bool>::sse_decode(&mut deserializer);
+            let api_condition_notes = <Option<String>>::sse_decode(&mut deserializer);
+            let api_fee_amount = <Option<f64>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::borrowing_api::process_return(
+                        api_borrowing_id,
+                        api_is_approved,
+                        api_condition_notes,
+                        api_fee_amount,
+                    )?;
                     Ok(output_ok)
                 })())
             }
@@ -684,6 +831,39 @@ fn wire__crate__api__borrowing_api__reject_borrowing_impl(
         },
     )
 }
+fn wire__crate__api__borrowing_api__request_return_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "request_return",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_borrowing_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::borrowing_api::request_return(api_borrowing_id)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__auth_api__reset_password_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -717,39 +897,6 @@ fn wire__crate__api__auth_api__reset_password_impl(
                         api_security_answer,
                         api_new_password_plain,
                     )?;
-                    Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__borrowing_api__return_book_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "return_book",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_borrowing_id = <String>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::borrowing_api::return_book(api_borrowing_id)?;
                     Ok(output_ok)
                 })())
             }
@@ -1021,6 +1168,8 @@ impl SseDecode for crate::domain::book::Book {
         let mut var_copies = <i32>::sse_decode(deserializer);
         let mut var_isAvailable = <bool>::sse_decode(deserializer);
         let mut var_imageUrl = <Option<String>>::sse_decode(deserializer);
+        let mut var_fineFee = <f64>::sse_decode(deserializer);
+        let mut var_maxBorrowDays = <i32>::sse_decode(deserializer);
         return crate::domain::book::Book {
             id: var_id,
             title: var_title,
@@ -1031,6 +1180,8 @@ impl SseDecode for crate::domain::book::Book {
             copies: var_copies,
             is_available: var_isAvailable,
             image_url: var_imageUrl,
+            fine_fee: var_fineFee,
+            max_borrow_days: var_maxBorrowDays,
         };
     }
 }
@@ -1068,6 +1219,10 @@ impl SseDecode for crate::domain::borrowing::Borrowing {
         let mut var_isReturned = <bool>::sse_decode(deserializer);
         let mut var_status = <crate::domain::borrowing::BorrowStatus>::sse_decode(deserializer);
         let mut var_hasReminder = <bool>::sse_decode(deserializer);
+        let mut var_returnStatus =
+            <crate::domain::borrowing::ReturnStatus>::sse_decode(deserializer);
+        let mut var_conditionNotes = <Option<String>>::sse_decode(deserializer);
+        let mut var_bookTitle = <Option<String>>::sse_decode(deserializer);
         return crate::domain::borrowing::Borrowing {
             id: var_id,
             book_id: var_bookId,
@@ -1079,7 +1234,17 @@ impl SseDecode for crate::domain::borrowing::Borrowing {
             is_returned: var_isReturned,
             status: var_status,
             has_reminder: var_hasReminder,
+            return_status: var_returnStatus,
+            condition_notes: var_conditionNotes,
+            book_title: var_bookTitle,
         };
+    }
+}
+
+impl SseDecode for f64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_f64::<NativeEndian>().unwrap()
     }
 }
 
@@ -1163,6 +1328,18 @@ impl SseDecode for Vec<crate::domain::borrowing::Borrowing> {
     }
 }
 
+impl SseDecode for Vec<crate::domain::penalty::Penalty> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::domain::penalty::Penalty>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1221,12 +1398,59 @@ impl SseDecode for Option<chrono::DateTime<chrono::Utc>> {
     }
 }
 
+impl SseDecode for Option<f64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<f64>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for crate::domain::penalty::Penalty {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_userId = <String>::sse_decode(deserializer);
+        let mut var_borrowingId = <Option<String>>::sse_decode(deserializer);
+        let mut var_amount = <f64>::sse_decode(deserializer);
+        let mut var_reason = <String>::sse_decode(deserializer);
+        let mut var_isPaid = <bool>::sse_decode(deserializer);
+        let mut var_createdAt = <chrono::DateTime<chrono::Utc>>::sse_decode(deserializer);
+        return crate::domain::penalty::Penalty {
+            id: var_id,
+            user_id: var_userId,
+            borrowing_id: var_borrowingId,
+            amount: var_amount,
+            reason: var_reason,
+            is_paid: var_isPaid,
+            created_at: var_createdAt,
+        };
+    }
+}
+
 impl SseDecode for (String, i32) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_field0 = <String>::sse_decode(deserializer);
         let mut var_field1 = <i32>::sse_decode(deserializer);
         return (var_field0, var_field1);
+    }
+}
+
+impl SseDecode for crate::domain::borrowing::ReturnStatus {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::domain::borrowing::ReturnStatus::None,
+            1 => crate::domain::borrowing::ReturnStatus::Pending,
+            2 => crate::domain::borrowing::ReturnStatus::Approved,
+            3 => crate::domain::borrowing::ReturnStatus::Rejected,
+            _ => unreachable!("Invalid variant for ReturnStatus: {}", inner),
+        };
     }
 }
 
@@ -1305,41 +1529,56 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__auth_api__get_all_users_impl(port, ptr, rust_vec_len, data_len),
-        10 => wire__crate__api__borrowing_api__get_pending_borrowings_impl(
+        9 => {
+            wire__crate__api__penalty_api__get_all_penalties_impl(port, ptr, rust_vec_len, data_len)
+        }
+        10 => wire__crate__api__auth_api__get_all_users_impl(port, ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__borrowing_api__get_pending_borrowings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        11 => wire__crate__api__borrowing_api__get_user_borrowings_impl(
+        12 => wire__crate__api__borrowing_api__get_user_borrowings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__auth_api__get_user_by_id_impl(port, ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__init_app_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__camera_api__init_camera_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__auth_api__login_user_impl(port, ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__face_api__register_face_impl(port, ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__auth_api__register_user_impl(port, ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__borrowing_api__reject_borrowing_impl(
+        13 => wire__crate__api__auth_api__get_user_by_id_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__penalty_api__get_user_penalties_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__auth_api__reset_password_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__borrowing_api__return_book_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__book_api__search_books_impl(port, ptr, rust_vec_len, data_len),
-        22 => {
+        15 => wire__crate__api__init_app_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__camera_api__init_camera_impl(port, ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__auth_api__login_user_impl(port, ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__penalty_api__pay_penalty_impl(port, ptr, rust_vec_len, data_len),
+        19 => {
+            wire__crate__api__borrowing_api__process_return_impl(port, ptr, rust_vec_len, data_len)
+        }
+        20 => wire__crate__api__face_api__register_face_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__auth_api__register_user_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__borrowing_api__reject_borrowing_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        23 => {
+            wire__crate__api__borrowing_api__request_return_impl(port, ptr, rust_vec_len, data_len)
+        }
+        24 => wire__crate__api__auth_api__reset_password_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__book_api__search_books_impl(port, ptr, rust_vec_len, data_len),
+        26 => {
             wire__crate__api__borrowing_api__send_reminder_impl(port, ptr, rust_vec_len, data_len)
         }
-        23 => wire__crate__api__camera_api__stop_camera_impl(port, ptr, rust_vec_len, data_len),
-        24 => wire__crate__api__book_api__update_book_impl(port, ptr, rust_vec_len, data_len),
-        25 => wire__crate__api__auth_api__update_user_impl(port, ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__face_api__verify_face_impl(port, ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__camera_api__stop_camera_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__book_api__update_book_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__auth_api__update_user_impl(port, ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__face_api__verify_face_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1395,6 +1634,8 @@ impl flutter_rust_bridge::IntoDart for crate::domain::book::Book {
             self.copies.into_into_dart().into_dart(),
             self.is_available.into_into_dart().into_dart(),
             self.image_url.into_into_dart().into_dart(),
+            self.fine_fee.into_into_dart().into_dart(),
+            self.max_borrow_days.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1441,6 +1682,9 @@ impl flutter_rust_bridge::IntoDart for crate::domain::borrowing::Borrowing {
             self.is_returned.into_into_dart().into_dart(),
             self.status.into_into_dart().into_dart(),
             self.has_reminder.into_into_dart().into_dart(),
+            self.return_status.into_into_dart().into_dart(),
+            self.condition_notes.into_into_dart().into_dart(),
+            self.book_title.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1480,6 +1724,55 @@ impl flutter_rust_bridge::IntoIntoDart<crate::domain::report::LibraryReport>
     for crate::domain::report::LibraryReport
 {
     fn into_into_dart(self) -> crate::domain::report::LibraryReport {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::domain::penalty::Penalty {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.user_id.into_into_dart().into_dart(),
+            self.borrowing_id.into_into_dart().into_dart(),
+            self.amount.into_into_dart().into_dart(),
+            self.reason.into_into_dart().into_dart(),
+            self.is_paid.into_into_dart().into_dart(),
+            self.created_at.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::domain::penalty::Penalty
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::domain::penalty::Penalty>
+    for crate::domain::penalty::Penalty
+{
+    fn into_into_dart(self) -> crate::domain::penalty::Penalty {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::domain::borrowing::ReturnStatus {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::None => 0.into_dart(),
+            Self::Pending => 1.into_dart(),
+            Self::Approved => 2.into_dart(),
+            Self::Rejected => 3.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::domain::borrowing::ReturnStatus
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::domain::borrowing::ReturnStatus>
+    for crate::domain::borrowing::ReturnStatus
+{
+    fn into_into_dart(self) -> crate::domain::borrowing::ReturnStatus {
         self
     }
 }
@@ -1568,6 +1861,8 @@ impl SseEncode for crate::domain::book::Book {
         <i32>::sse_encode(self.copies, serializer);
         <bool>::sse_encode(self.is_available, serializer);
         <Option<String>>::sse_encode(self.image_url, serializer);
+        <f64>::sse_encode(self.fine_fee, serializer);
+        <i32>::sse_encode(self.max_borrow_days, serializer);
     }
 }
 
@@ -1608,6 +1903,16 @@ impl SseEncode for crate::domain::borrowing::Borrowing {
         <bool>::sse_encode(self.is_returned, serializer);
         <crate::domain::borrowing::BorrowStatus>::sse_encode(self.status, serializer);
         <bool>::sse_encode(self.has_reminder, serializer);
+        <crate::domain::borrowing::ReturnStatus>::sse_encode(self.return_status, serializer);
+        <Option<String>>::sse_encode(self.condition_notes, serializer);
+        <Option<String>>::sse_encode(self.book_title, serializer);
+    }
+}
+
+impl SseEncode for f64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_f64::<NativeEndian>(self).unwrap();
     }
 }
 
@@ -1669,6 +1974,16 @@ impl SseEncode for Vec<crate::domain::borrowing::Borrowing> {
     }
 }
 
+impl SseEncode for Vec<crate::domain::penalty::Penalty> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::domain::penalty::Penalty>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1719,11 +2034,52 @@ impl SseEncode for Option<chrono::DateTime<chrono::Utc>> {
     }
 }
 
+impl SseEncode for Option<f64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <f64>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for crate::domain::penalty::Penalty {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <String>::sse_encode(self.user_id, serializer);
+        <Option<String>>::sse_encode(self.borrowing_id, serializer);
+        <f64>::sse_encode(self.amount, serializer);
+        <String>::sse_encode(self.reason, serializer);
+        <bool>::sse_encode(self.is_paid, serializer);
+        <chrono::DateTime<chrono::Utc>>::sse_encode(self.created_at, serializer);
+    }
+}
+
 impl SseEncode for (String, i32) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.0, serializer);
         <i32>::sse_encode(self.1, serializer);
+    }
+}
+
+impl SseEncode for crate::domain::borrowing::ReturnStatus {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::domain::borrowing::ReturnStatus::None => 0,
+                crate::domain::borrowing::ReturnStatus::Pending => 1,
+                crate::domain::borrowing::ReturnStatus::Approved => 2,
+                crate::domain::borrowing::ReturnStatus::Rejected => 3,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
     }
 }
 

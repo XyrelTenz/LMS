@@ -5,28 +5,29 @@ import 'package:librarymanagementsystem/src/rust/domain.dart' as domain;
 import 'package:librarymanagementsystem/src/core/feedback_utils.dart';
 import 'package:intl/intl.dart';
 
-class ApprovalsScreen extends StatefulWidget {
-  const ApprovalsScreen({super.key});
+class ReturnRequestsScreen extends StatefulWidget {
+  const ReturnRequestsScreen({super.key});
 
   @override
-  State<ApprovalsScreen> createState() => _ApprovalsScreenState();
+  State<ReturnRequestsScreen> createState() => _ReturnRequestsScreenState();
 }
 
-class _ApprovalsScreenState extends State<ApprovalsScreen> {
-  List<domain.Borrowing> _pendingRequests = [];
+class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
+  List<domain.Borrowing> _pendingReturns = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadPendingRequests();
+    _loadPendingReturns();
   }
 
-  Future<void> _loadPendingRequests() async {
+  Future<void> _loadPendingReturns() async {
     setState(() => _isLoading = true);
     try {
-      final requests = await api.getPendingBorrowings();
-      setState(() => _pendingRequests = requests);
+      final allBorrowings = await api.getAllBorrowings();
+      final returns = allBorrowings.where((b) => b.returnStatus == domain.ReturnStatus.pending).toList();
+      setState(() => _pendingReturns = returns);
     } catch (e) {
       if (!mounted) return;
       FeedbackUtils.show(
@@ -40,31 +41,15 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
     }
   }
 
-  Future<void> _handleApproval(
-    String id,
-    bool approve, [
-    DateTime? dueDate,
-  ]) async {
+  Future<void> _handleReturnAction(String borrowingId, bool approve, String? conditionNotes, double? feeAmount) async {
     try {
-      if (approve) {
-        final dateStr = dueDate != null
-            ? dueDate.toUtc().toIso8601String()
-            : DateTime.now()
-                  .add(const Duration(days: 1))
-                  .toUtc()
-                  .toIso8601String();
-        await api.approveBorrowing(borrowingId: id, dueDate: dateStr);
-      } else {
-        await api.rejectBorrowing(borrowingId: id);
-      }
-      _loadPendingRequests();
+      await api.processReturn(borrowingId: borrowingId, isApproved: approve, conditionNotes: conditionNotes, feeAmount: feeAmount);
+      _loadPendingReturns();
       if (!mounted) return;
       FeedbackUtils.show(
         context,
-        title: approve ? "Approved" : "Rejected",
-        message: approve
-            ? "The borrow request has been successfully approved."
-            : "The borrow request has been rejected.",
+        title: approve ? "Return Approved" : "Return Rejected",
+        message: approve ? "Book marked as returned." : "Return rejected with condition notes.",
         type: approve ? FeedbackType.success : FeedbackType.info,
       );
     } catch (e) {
@@ -76,6 +61,65 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
         type: FeedbackType.error,
       );
     }
+  }
+
+  void _showRejectDialog(String borrowingId) {
+    final TextEditingController notesController = TextEditingController();
+    final TextEditingController feeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: const Text("Reject Return"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Specify the reason for rejecting the return (e.g., damaged pages)."),
+              const SizedBox(height: 16),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: "Condition Notes / Reason",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: feeController,
+                decoration: const InputDecoration(
+                  labelText: "Penalty Fee Amount (\$)",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final notes = notesController.text.trim();
+                final fee = double.tryParse(feeController.text.trim());
+                if (notes.isEmpty) {
+                  FeedbackUtils.show(context, title: "Validation Error", message: "Condition notes are required.", type: FeedbackType.error);
+                  return;
+                }
+                Navigator.pop(context);
+                _handleReturnAction(borrowingId, false, notes, fee);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+              child: const Text("Reject & Apply Fee"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -90,7 +134,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _pendingRequests.isEmpty
+                : _pendingReturns.isEmpty
                 ? _buildEmptyState()
                 : _buildRequestsList(),
           ),
@@ -104,7 +148,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Borrow Approvals",
+          "Return Requests",
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             color: AppColors.textDark,
             fontWeight: FontWeight.bold,
@@ -112,7 +156,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          "Manage and respond to student book borrow requests.",
+          "Review books returned by students and assess their condition.",
           style: TextStyle(color: AppColors.textLight, fontSize: 16),
         ),
       ],
@@ -124,10 +168,10 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[300]),
+          Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[300]),
           const SizedBox(height: 16),
           Text(
-            "No pending approvals",
+            "No pending return requests",
             style: TextStyle(color: Colors.grey[500], fontSize: 18),
           ),
         ],
@@ -137,9 +181,9 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
 
   Widget _buildRequestsList() {
     return ListView.builder(
-      itemCount: _pendingRequests.length,
+      itemCount: _pendingReturns.length,
       itemBuilder: (context, index) {
-        final request = _pendingRequests[index];
+        final request = _pendingReturns[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           elevation: 0,
@@ -154,10 +198,10 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: Colors.orange.withOpacity(0.1),
                     borderRadius: BorderRadius.zero,
                   ),
-                  child: const Icon(Icons.book, color: AppColors.primary),
+                  child: const Icon(Icons.keyboard_return, color: Colors.orange),
                 ),
                 const SizedBox(width: 24),
                 Expanded(
@@ -173,17 +217,12 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        request.bookTitle ?? "Book ID: ${request.bookId}",
+                        "Book ID: ${request.bookId}",
                         style: TextStyle(color: AppColors.textLight),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Requested Due: ${DateFormat('MMM dd, yyyy').format(request.dueDate.toLocal())}",
-                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Requested: ${DateFormat('MMM dd, yyyy • hh:mm a').format(request.borrowDate)}",
+                        "Borrowed: ${DateFormat('MMM dd, yyyy').format(request.borrowDate)}",
                         style: TextStyle(color: Colors.grey[500], fontSize: 12),
                       ),
                     ],
@@ -192,7 +231,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                 Row(
                   children: [
                     ElevatedButton(
-                      onPressed: () => _handleApproval(request.id, false),
+                      onPressed: () => _showRejectDialog(request.id),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red[50],
                         foregroundColor: Colors.red,
@@ -205,46 +244,11 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                           borderRadius: BorderRadius.zero,
                         ),
                       ),
-                      child: const Text("Reject"),
+                      child: const Text("Reject & Fee"),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () async {
-                        final now = DateTime.now();
-                        final defaultDueDate = request.dueDate.isAfter(now) ? request.dueDate.toLocal() : now.add(const Duration(days: 1));
-                        final DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: defaultDueDate,
-                          firstDate: now,
-                          lastDate: now.add(const Duration(days: 365)),
-                          helpText: "SELECT DUE DATE",
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: const ColorScheme.light(
-                                  primary: AppColors.primary,
-                                  onPrimary: Colors.white,
-                                  onSurface: AppColors.textDark,
-                                ),
-                                textButtonTheme: TextButtonThemeData(
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: AppColors.primary,
-                                  ),
-                                ),
-                                dialogTheme: const DialogThemeData(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.zero,
-                                  ),
-                                ),
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (picked != null) {
-                          _handleApproval(request.id, true, picked);
-                        }
-                      },
+                      onPressed: () => _handleReturnAction(request.id, true, null, null),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -257,7 +261,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                           borderRadius: BorderRadius.zero,
                         ),
                       ),
-                      child: const Text("Approve"),
+                      child: const Text("Approve Return"),
                     ),
                   ],
                 ),

@@ -7,6 +7,9 @@ import 'package:librarymanagementsystem/view/librarian/presentation/screens/book
 import 'package:librarymanagementsystem/view/librarian/presentation/screens/borrowers_screen.dart';
 import 'package:librarymanagementsystem/view/librarian/presentation/screens/reports_screen.dart';
 import 'package:librarymanagementsystem/view/librarian/presentation/screens/approvals_screen.dart';
+import 'package:librarymanagementsystem/view/librarian/presentation/screens/return_requests_screen.dart';
+import 'package:librarymanagementsystem/view/librarian/presentation/screens/penalties_screen.dart';
+import 'package:librarymanagementsystem/view/librarian/presentation/screens/return_history_screen.dart';
 
 class LibrarianModule extends Module {
   @override
@@ -19,6 +22,9 @@ class LibrarianModule extends Module {
           SidebarItem(title: "Books Management", icon: Icons.book),
           SidebarItem(title: "Borrowers", icon: Icons.people),
           SidebarItem(title: "Approvals", icon: Icons.how_to_reg),
+          SidebarItem(title: "Returns", icon: Icons.keyboard_return),
+          SidebarItem(title: "Return History", icon: Icons.history_edu),
+          SidebarItem(title: "Penalties", icon: Icons.money_off),
           SidebarItem(title: "Reports", icon: Icons.bar_chart),
         ],
         child: child,
@@ -39,6 +45,18 @@ class LibrarianModule extends Module {
         ChildRoute(
           '/approvals',
           child: (context, state) => const ApprovalsScreen(),
+        ),
+        ChildRoute(
+          '/returns',
+          child: (context, state) => const ReturnRequestsScreen(),
+        ),
+        ChildRoute(
+          '/return_history',
+          child: (context, state) => const ReturnHistoryScreen(),
+        ),
+        ChildRoute(
+          '/penalties',
+          child: (context, state) => const PenaltiesScreen(),
         ),
         ChildRoute(
           '/reports',

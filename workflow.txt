@@ -3,41 +3,93 @@ graph TD
     classDef student fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
     classDef librarian fill:#efebe9,stroke:#4e342e,stroke-width:2px,color:#3e2723;
     classDef system fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+    classDef auth fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#e65100;
     classDef startStop fill:#eceff1,stroke:#37474f,stroke-width:2px,color:#263238;
 
-    Start([START]):::startStop --> Auth{Select User Role}
-    
-    %% Student Path
-    Auth -->|Student| StudLogin[Login / Sign Up]:::student
-    StudLogin --> StudCatalog[Browse Book Catalog]:::student
-    StudCatalog --> CheckAvail{Is Book Copies > 1?}:::system
-    
-    CheckAvail -->|No| Lock[Catalog Label: LAST COPY IN USE<br>Requesting Disabled]:::system
-    CheckAvail -->|Yes| RequestBorrow[Click REQUEST TO BORROW]:::student
-    
-    RequestBorrow --> CheckActive{Does Student Have<br>Active/Pending Borrow?}:::system
-    CheckActive -->|Yes| BlockRequest[Alert: Block Request<br>Must return current book first]:::system
-    CheckActive -->|No| PendingState[Insert Borrow Request<br>State: Pending]:::system
-    
-    %% Librarian Path
-    Auth -->|Librarian| LibLogin[Login]:::librarian
-    LibLogin --> LibDashboard[Librarian Dashboard]:::librarian
-    LibDashboard --> LibApprovals[Manage Approvals Screen]:::librarian
-    
-    %% Approvals Pipeline
-    PendingState -.->|Triggers State Update| LibApprovals
-    LibApprovals --> ApproveCheck{Action: Approve Request?}:::librarian
-    
-    ApproveCheck -->|No| RejectBorrow[Reject Request<br>State: Rejected]:::librarian
-    ApproveCheck -->|Yes| PickDueDate[DatePicker: Select Custom Due Date<br>Default: 1 Day]:::librarian
-    
-    RejectBorrow --> RestockBook[Inventory Restored<br>copies = copies + 1]:::system
-    PickDueDate --> ActiveBorrow[Approved & Deducted<br>copies = copies - 1]:::system
-    
-    %% Returns Flow
-    ActiveBorrow --> LibBorrowers[Borrowers Management Grid]:::librarian
-    LibBorrowers --> SendReminder[Click Send Reminder]:::librarian
-    SendReminder --> StudentDashboard[Student: My Borrowings Screen]:::student
-    StudentDashboard --> ReturnBtn[Click RETURN Button]:::student
-    ReturnBtn --> ReturnConfirm[Process SQLite Return<br>copies = copies + 1<br>is_available = 1]:::system
-    ReturnConfirm --> Completed([Transaction Completed]):::startStop
+    %% Global Start
+    GlobalStart([Start]):::startStop --> LoginScreen
+
+    subgraph AuthFlow [Authentication Flow]
+        LoginScreen[Login Screen]:::auth
+        
+        LoginScreen --> |New User| RegisterScreen[Register Screen]:::auth
+        LoginScreen --> |Forgot Password| ForgotPassword[Forgot Password Screen]:::auth
+        
+        RegisterScreen --> |Submit Details| RegisterAction[Create Account in System]:::system
+        RegisterAction --> LoginScreen
+        
+        ForgotPassword --> |Submit Email| ResetAction[Send Reset Link / Validate]:::system
+        ResetAction --> LoginScreen
+        
+        LoginScreen --> |Submit Credentials| ValidateLogin{Validate Login}:::system
+        ValidateLogin --> |Invalid Credentials| ShowError[Show Error Message]:::auth
+        ShowError --> LoginScreen
+        
+        ValidateLogin --> |Valid Credentials| RoleCheck{Check User Role}:::system
+        RoleCheck -->|Student| StudentStart
+        RoleCheck -->|Librarian| LibStart
+    end
+
+    subgraph StudentFlow [Student Flow]
+        StudentStart([Student Dashboard]):::startStop --> BrowseBooks[Browse Book Catalog]:::student
+        StudentStart --> MyBorrowings[View My Borrowings Screen]:::student
+
+        %% Catalog / Request Flow
+        BrowseBooks --> ViewBook[View Book Details]:::student
+        ViewBook --> CheckAvail{Is Book Copies > 1?}:::system
+        
+        CheckAvail -->|No| Lock[Catalog Label: LAST COPY IN USE<br>Requesting Disabled]:::system
+        CheckAvail -->|Yes| RequestBorrow[Click REQUEST TO BORROW]:::student
+        
+        RequestBorrow --> CheckActive{Does Student Have<br>Active/Pending Borrow?}:::system
+        CheckActive -->|Yes| BlockRequest[Alert: Block Request<br>Must return current book first]:::system
+        CheckActive -->|No| PendingState[Insert Borrow Request<br>State: Pending]:::system
+        
+        %% Borrowings Flow
+        MyBorrowings --> ReturnBtn[Click RETURN Button]:::student
+        ReturnBtn --> ReturnConfirm[Process SQLite Return<br>copies = copies + 1<br>is_available = 1]:::system
+        
+        %% Flow Ends
+        StudentEnd([End]):::startStop
+        Lock --> StudentEnd
+        BlockRequest --> StudentEnd
+        PendingState --> StudentEnd
+        ReturnConfirm --> StudentEnd
+    end
+
+    subgraph LibrarianFlow [Librarian Flow]
+        LibStart([Librarian Dashboard]):::startStop --> ManageInventory[Manage Inventory]:::librarian
+        LibStart --> ManageApprovals[Manage Approvals Screen]:::librarian
+        LibStart --> BorrowersMgmt[Borrowers Management Grid]:::librarian
+        LibStart --> SystemReports[Generate Reports]:::librarian
+        
+        %% Inventory Flow
+        ManageInventory --> AddEditDelete[Add / Edit / Delete Books]:::librarian
+        
+        %% Approvals Flow
+        ManageApprovals --> ApproveCheck{Action: Approve Request?}:::librarian
+        ApproveCheck -->|No| RejectBorrow[Reject Request<br>State: Rejected]:::librarian
+        ApproveCheck -->|Yes| PickDueDate[DatePicker: Select Custom Due Date<br>Default: 1 Day]:::librarian
+        
+        RejectBorrow --> RestockBook[Inventory Restored<br>copies = copies + 1]:::system
+        PickDueDate --> ActiveBorrow[Approved & Deducted<br>copies = copies - 1]:::system
+        
+        %% Borrowers & Reminders
+        BorrowersMgmt --> SendReminder[Click Send Reminder]:::librarian
+        SendReminder --> NotifyStudent[Push Notification / Alert to Student]:::system
+        
+        %% Reports
+        SystemReports --> ActiveBorrowersReport[Print Active Borrowers]:::librarian
+        SystemReports --> BorrowedBooksReport[Print Borrowed Books]:::librarian
+        SystemReports --> InventoryReport[Print Book Inventory]:::librarian
+        
+        %% Flow Ends
+        LibEnd([End]):::startStop
+        AddEditDelete --> LibEnd
+        RestockBook --> LibEnd
+        ActiveBorrow --> LibEnd
+        NotifyStudent --> LibEnd
+        ActiveBorrowersReport --> LibEnd
+        BorrowedBooksReport --> LibEnd
+        InventoryReport --> LibEnd
+    end

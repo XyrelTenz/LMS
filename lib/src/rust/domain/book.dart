@@ -16,6 +16,8 @@ class Book {
   final int copies;
   final bool isAvailable;
   final String? imageUrl;
+  final double fineFee;
+  final int maxBorrowDays;
 
   const Book({
     required this.id,
@@ -27,6 +29,8 @@ class Book {
     required this.copies,
     required this.isAvailable,
     this.imageUrl,
+    required this.fineFee,
+    required this.maxBorrowDays,
   });
 
   @override
@@ -39,7 +43,9 @@ class Book {
       genre.hashCode ^
       copies.hashCode ^
       isAvailable.hashCode ^
-      imageUrl.hashCode;
+      imageUrl.hashCode ^
+      fineFee.hashCode ^
+      maxBorrowDays.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -54,5 +60,7 @@ class Book {
           genre == other.genre &&
           copies == other.copies &&
           isAvailable == other.isAvailable &&
-          imageUrl == other.imageUrl;
+          imageUrl == other.imageUrl &&
+          fineFee == other.fineFee &&
+          maxBorrowDays == other.maxBorrowDays;
 }

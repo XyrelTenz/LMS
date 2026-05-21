@@ -2,6 +2,7 @@ pub mod auth_api;
 pub mod book_api;
 pub mod borrowing_api;
 pub mod report_api;
+pub mod penalty_api;
 pub mod face_api;
 pub mod camera_api;
 

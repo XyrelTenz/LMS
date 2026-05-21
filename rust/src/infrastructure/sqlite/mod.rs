@@ -27,7 +27,9 @@ pub fn init_db() -> rusqlite::Result<Connection> {
             genre TEXT NOT NULL,
             copies INTEGER NOT NULL DEFAULT 1,
             is_available INTEGER NOT NULL DEFAULT 1,
-            image_url TEXT
+            image_url TEXT,
+            fine_fee REAL NOT NULL DEFAULT 0.0,
+            max_borrow_days INTEGER NOT NULL DEFAULT 7
         )",
         [],
     )?;
@@ -44,8 +46,25 @@ pub fn init_db() -> rusqlite::Result<Connection> {
             is_returned INTEGER NOT NULL DEFAULT 0,
             status TEXT NOT NULL DEFAULT 'Approved',
             has_reminder INTEGER NOT NULL DEFAULT 0,
+            return_status TEXT NOT NULL DEFAULT 'None',
+            condition_notes TEXT,
             FOREIGN KEY(book_id) REFERENCES books(id),
             FOREIGN KEY(user_id) REFERENCES users(id)
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS penalties (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            borrowing_id TEXT,
+            amount REAL NOT NULL,
+            reason TEXT NOT NULL,
+            is_paid INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(borrowing_id) REFERENCES borrowings(id)
         )",
         [],
     )?;
@@ -63,10 +82,30 @@ pub fn init_db() -> rusqlite::Result<Connection> {
         [],
     );
 
+    let _ = conn.execute(
+        "ALTER TABLE books ADD COLUMN fine_fee REAL NOT NULL DEFAULT 0.0",
+        [],
+    );
+
+    let _ = conn.execute(
+        "ALTER TABLE books ADD COLUMN max_borrow_days INTEGER NOT NULL DEFAULT 7",
+        [],
+    );
+
     let _ = conn.execute("ALTER TABLE borrowings ADD COLUMN due_date TEXT", []);
 
     let _ = conn.execute(
         "ALTER TABLE borrowings ADD COLUMN has_reminder INTEGER NOT NULL DEFAULT 0",
+        [],
+    );
+
+    let _ = conn.execute(
+        "ALTER TABLE borrowings ADD COLUMN return_status TEXT NOT NULL DEFAULT 'None'",
+        [],
+    );
+
+    let _ = conn.execute(
+        "ALTER TABLE borrowings ADD COLUMN condition_notes TEXT",
         [],
     );
 

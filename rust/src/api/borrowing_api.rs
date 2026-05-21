@@ -1,14 +1,19 @@
 use crate::application::borrowing_service;
 pub use crate::domain::borrowing::{Borrowing, BorrowStatus};
 
-/// Initiates a borrow request for a book by a student.
-pub fn borrow_book(user_id: String, user_name: String, book_id: String) -> Result<(), String> {
-    borrowing_service::borrow_book(user_id, user_name, book_id)
+/// Submits a request for a student to borrow a specific book.
+pub fn borrow_book(user_id: String, user_name: String, book_id: String, borrow_days: i32) -> Result<(), String> {
+    borrowing_service::borrow_book(user_id, user_name, book_id, borrow_days)
 }
 
-/// Finalizes the return of a borrowed book.
-pub fn return_book(borrowing_id: String) -> Result<(), String> {
-    borrowing_service::return_book(borrowing_id)
+/// Initiates a return request for a borrowed book.
+pub fn request_return(borrowing_id: String) -> Result<(), String> {
+    borrowing_service::request_return(borrowing_id)
+}
+
+/// Librarian processes the return request, either approving or rejecting with condition notes and potential fees.
+pub fn process_return(borrowing_id: String, is_approved: bool, condition_notes: Option<String>, fee_amount: Option<f64>) -> Result<(), String> {
+    borrowing_service::process_return(borrowing_id, is_approved, condition_notes, fee_amount)
 }
 
 /// Fetches all borrowing records for a specific user.

@@ -7,7 +7,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:librarymanagementsystem/src/core/print_report_utils.dart';
 
-// TODO: Can print 2 options Active Borrower List and List of books that borrow
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
@@ -71,7 +70,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
           "List of all students currently holding borrowed books as of ${DateFormat('MMM dd, yyyy').format(DateTime.now())}",
       columns: ["Student Name", "Student ID", "Book Title", "Due Date"],
       data: _report!.activeBorrowers
-          .map((b) => [b.borrowerName, b.userId, b.bookTitle, _formatReportDate(b.dueDate)])
+          .map(
+            (b) => [
+              b.borrowerName,
+              b.userId,
+              b.bookTitle,
+              _formatReportDate(b.dueDate),
+            ],
+          )
           .toList(),
     );
   }

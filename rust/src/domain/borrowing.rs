@@ -73,4 +73,5 @@ pub struct Borrowing {
     pub return_status: ReturnStatus,
     pub condition_notes: Option<String>,
     pub book_title: Option<String>,
+    pub book_isbn: Option<String>,
 }

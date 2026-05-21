@@ -3,7 +3,6 @@ use crate::domain::report::{ActiveBorrower, LibraryReport};
 use crate::infrastructure::sqlite;
 use std::collections::HashMap;
 
-/// Calculates library-wide metrics including book status counts and genre distribution.
 pub fn generate_report() -> Result<LibraryReport, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
 

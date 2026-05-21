@@ -387,7 +387,7 @@ class _SigninScreenState extends State<SigninScreen> {
                       isVisible
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: AppColors.primary.withValues(alpha: 0.7),
+                      color: AppColors.textLight,
                     ),
                     onPressed: onToggleVisibility,
                   )

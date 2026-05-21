@@ -26,7 +26,9 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
     setState(() => _isLoading = true);
     try {
       final allBorrowings = await api.getAllBorrowings();
-      final returns = allBorrowings.where((b) => b.returnStatus == domain.ReturnStatus.pending).toList();
+      final returns = allBorrowings
+          .where((b) => b.returnStatus == domain.ReturnStatus.pending)
+          .toList();
       setState(() => _pendingReturns = returns);
     } catch (e) {
       if (!mounted) return;
@@ -41,15 +43,27 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
     }
   }
 
-  Future<void> _handleReturnAction(String borrowingId, bool approve, String? conditionNotes, double? feeAmount) async {
+  Future<void> _handleReturnAction(
+    String borrowingId,
+    bool approve,
+    String? conditionNotes,
+    double? feeAmount,
+  ) async {
     try {
-      await api.processReturn(borrowingId: borrowingId, isApproved: approve, conditionNotes: conditionNotes, feeAmount: feeAmount);
+      await api.processReturn(
+        borrowingId: borrowingId,
+        isApproved: approve,
+        conditionNotes: conditionNotes,
+        feeAmount: feeAmount,
+      );
       _loadPendingReturns();
       if (!mounted) return;
       FeedbackUtils.show(
         context,
         title: approve ? "Return Approved" : "Return Rejected",
-        message: approve ? "Book marked as returned." : "Return rejected with condition notes.",
+        message: approve
+            ? "Book marked as returned."
+            : "Return rejected with condition notes.",
         type: approve ? FeedbackType.success : FeedbackType.info,
       );
     } catch (e) {
@@ -76,7 +90,9 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Specify the reason for rejecting the return (e.g., damaged pages)."),
+              const Text(
+                "Specify the reason for rejecting the return (e.g., damaged pages).",
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: notesController,
@@ -90,7 +106,7 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
               TextField(
                 controller: feeController,
                 decoration: const InputDecoration(
-                  labelText: "Penalty Fee Amount (\$)",
+                  labelText: "Penalty Fee Amount (₱)",
                   border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                 ),
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
@@ -107,13 +123,23 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
                 final notes = notesController.text.trim();
                 final fee = double.tryParse(feeController.text.trim());
                 if (notes.isEmpty) {
-                  FeedbackUtils.show(context, title: "Validation Error", message: "Condition notes are required.", type: FeedbackType.error);
+                  FeedbackUtils.show(
+                    context,
+                    title: "Validation Error",
+                    message: "Condition notes are required.",
+                    type: FeedbackType.error,
+                  );
                   return;
                 }
                 Navigator.pop(context);
                 _handleReturnAction(borrowingId, false, notes, fee);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
               child: const Text("Reject & Apply Fee"),
             ),
           ],
@@ -198,10 +224,13 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.zero,
                   ),
-                  child: const Icon(Icons.keyboard_return, color: Colors.orange),
+                  child: const Icon(
+                    Icons.keyboard_return,
+                    color: Colors.orange,
+                  ),
                 ),
                 const SizedBox(width: 24),
                 Expanded(
@@ -248,7 +277,8 @@ class _ReturnRequestsScreenState extends State<ReturnRequestsScreen> {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () => _handleReturnAction(request.id, true, null, null),
+                      onPressed: () =>
+                          _handleReturnAction(request.id, true, null, null),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,

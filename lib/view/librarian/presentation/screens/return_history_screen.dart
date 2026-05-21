@@ -32,12 +32,21 @@ class _ReturnHistoryScreenState extends State<ReturnHistoryScreen> {
     try {
       final borrowings = await api.getAllBorrowings();
       setState(() {
-        _history = borrowings.where((b) => b.isReturned || b.status == domain.BorrowStatus.rejected).toList();
+        _history = borrowings
+            .where(
+              (b) => b.isReturned || b.status == domain.BorrowStatus.rejected,
+            )
+            .toList();
         _updateDataSource();
       });
     } catch (e) {
       if (!mounted) return;
-      FeedbackUtils.show(context, title: "Load Error", message: e.toString(), type: FeedbackType.error);
+      FeedbackUtils.show(
+        context,
+        title: "Load Error",
+        message: e.toString(),
+        type: FeedbackType.error,
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -46,9 +55,9 @@ class _ReturnHistoryScreenState extends State<ReturnHistoryScreen> {
   void _updateDataSource() {
     final filteredHistory = _history.where((b) {
       final query = _searchController.text.toLowerCase();
-      return b.borrowerName.toLowerCase().contains(query) || 
-             b.userId.toLowerCase().contains(query) ||
-             (b.bookTitle ?? b.bookId).toLowerCase().contains(query);
+      return b.borrowerName.toLowerCase().contains(query) ||
+          b.userId.toLowerCase().contains(query) ||
+          (b.bookTitle ?? b.bookIsbn ?? '').toLowerCase().contains(query);
     }).toList();
 
     // Sort by return date descending
@@ -65,15 +74,22 @@ class _ReturnHistoryScreenState extends State<ReturnHistoryScreen> {
     PrintReportUtils.showPrintPreview(
       context,
       title: "Return & Audit History",
-      subtitle: "Historical log of returns and rejections as of ${DateFormat('MMM dd, yyyy').format(DateTime.now())}",
+      subtitle:
+          "Historical log of returns and rejections as of ${DateFormat('MMM dd, yyyy').format(DateTime.now())}",
       columns: ["Student", "Book", "Status", "Date", "Notes"],
-      data: _history.map((b) => [
-        b.borrowerName,
-        b.bookTitle ?? b.bookId,
-        b.isReturned ? "Returned" : "Rejected",
-        DateFormat('MMM dd, yyyy').format((b.returnDate ?? b.borrowDate).toLocal()),
-        b.conditionNotes ?? "None",
-      ]).toList(),
+      data: _history
+          .map(
+            (b) => [
+              b.borrowerName,
+              b.bookTitle ?? b.bookIsbn ?? 'N/A',
+              b.isReturned ? "Returned" : "Rejected",
+              DateFormat(
+                'MMM dd, yyyy',
+              ).format((b.returnDate ?? b.borrowDate).toLocal()),
+              b.conditionNotes ?? "None",
+            ],
+          )
+          .toList(),
     );
   }
 
@@ -108,37 +124,57 @@ class _ReturnHistoryScreenState extends State<ReturnHistoryScreen> {
                           GridColumn(
                             columnName: 'date',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Date',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'name',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Student', style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Student',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'book',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Book', style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Book',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'status',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Status',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'notes',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Condition / Notes', style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Condition / Notes',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -160,10 +196,10 @@ class _ReturnHistoryScreenState extends State<ReturnHistoryScreen> {
             Text(
               "Return History Log",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.textDark,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
-                  ),
+                color: AppColors.textDark,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -180,7 +216,11 @@ class _ReturnHistoryScreenState extends State<ReturnHistoryScreen> {
               color: AppColors.textDark,
               borderRadius: BorderRadius.zero,
             ),
-            child: const Icon(Icons.print_outlined, color: Colors.white, size: 24),
+            child: const Icon(
+              Icons.print_outlined,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
         ),
       ],
@@ -204,12 +244,15 @@ class _ReturnHistoryScreenState extends State<ReturnHistoryScreen> {
                 hintText: "Search by student name or book...",
                 prefixIcon: const Icon(Icons.search, color: AppColors.primary),
                 filled: true,
-                fillColor: AppColors.background.withOpacity(0.5),
+                fillColor: AppColors.background.withValues(alpha: 0.5),
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: Colors.grey),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
               onChanged: (val) => setState(() {
                 _updateDataSource();
@@ -223,39 +266,56 @@ class _ReturnHistoryScreenState extends State<ReturnHistoryScreen> {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return ElevatedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 18),
       label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
-        foregroundColor: color,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      ).copyWith(
-        overlayColor: WidgetStateProperty.all(color.withOpacity(0.05)),
-      ),
+      style:
+          ElevatedButton.styleFrom(
+            backgroundColor: color.withValues(alpha: 0.1),
+            foregroundColor: color,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+          ).copyWith(
+            overlayColor: WidgetStateProperty.all(
+              color.withValues(alpha: 0.05),
+            ),
+          ),
     );
   }
 }
 
 class ReturnHistoryDataSource extends DataGridSource {
-  ReturnHistoryDataSource({
-    required List<domain.Borrowing> history,
-  }) {
+  ReturnHistoryDataSource({required List<domain.Borrowing> history}) {
     _dataGridRows = history.map<DataGridRow>((b) {
       final date = b.returnDate ?? b.borrowDate;
-      return DataGridRow(cells: [
-        DataGridCell<DateTime>(columnName: 'date', value: date.toLocal()),
-        DataGridCell<String>(columnName: 'name', value: b.borrowerName),
-        DataGridCell<String>(columnName: 'book', value: b.bookTitle ?? b.bookId),
-        DataGridCell<String>(
+      return DataGridRow(
+        cells: [
+          DataGridCell<DateTime>(columnName: 'date', value: date.toLocal()),
+          DataGridCell<String>(columnName: 'name', value: b.borrowerName),
+          DataGridCell<String>(
+            columnName: 'book',
+            value: b.bookTitle ?? b.bookIsbn ?? 'N/A',
+          ),
+          DataGridCell<String>(
             columnName: 'status',
-            value: b.isReturned ? 'Returned' : 'Rejected'),
-        DataGridCell<String>(columnName: 'notes', value: b.conditionNotes ?? "-"),
-      ]);
+            value: b.isReturned ? 'Returned' : 'Rejected',
+          ),
+          DataGridCell<String>(
+            columnName: 'notes',
+            value: b.conditionNotes ?? "-",
+          ),
+        ],
+      );
     }).toList();
   }
 
@@ -268,7 +328,7 @@ class ReturnHistoryDataSource extends DataGridSource {
   DataGridRowAdapter? buildRow(DataGridRow row) {
     final DateTime date = row.getCells()[0].value;
     final String status = row.getCells()[3].value;
-    
+
     final statusColor = status == 'Returned' ? Colors.green : Colors.red;
 
     return DataGridRowAdapter(
@@ -294,9 +354,9 @@ class ReturnHistoryDataSource extends DataGridSource {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.zero,
-              border: Border.all(color: statusColor.withOpacity(0.3)),
+              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
             ),
             child: Text(
               status.toUpperCase(),

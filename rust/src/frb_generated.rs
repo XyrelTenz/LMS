@@ -1223,6 +1223,7 @@ impl SseDecode for crate::domain::borrowing::Borrowing {
             <crate::domain::borrowing::ReturnStatus>::sse_decode(deserializer);
         let mut var_conditionNotes = <Option<String>>::sse_decode(deserializer);
         let mut var_bookTitle = <Option<String>>::sse_decode(deserializer);
+        let mut var_bookIsbn = <Option<String>>::sse_decode(deserializer);
         return crate::domain::borrowing::Borrowing {
             id: var_id,
             book_id: var_bookId,
@@ -1237,6 +1238,7 @@ impl SseDecode for crate::domain::borrowing::Borrowing {
             return_status: var_returnStatus,
             condition_notes: var_conditionNotes,
             book_title: var_bookTitle,
+            book_isbn: var_bookIsbn,
         };
     }
 }
@@ -1685,6 +1687,7 @@ impl flutter_rust_bridge::IntoDart for crate::domain::borrowing::Borrowing {
             self.return_status.into_into_dart().into_dart(),
             self.condition_notes.into_into_dart().into_dart(),
             self.book_title.into_into_dart().into_dart(),
+            self.book_isbn.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1906,6 +1909,7 @@ impl SseEncode for crate::domain::borrowing::Borrowing {
         <crate::domain::borrowing::ReturnStatus>::sse_encode(self.return_status, serializer);
         <Option<String>>::sse_encode(self.condition_notes, serializer);
         <Option<String>>::sse_encode(self.book_title, serializer);
+        <Option<String>>::sse_encode(self.book_isbn, serializer);
     }
 }
 

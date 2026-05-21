@@ -28,10 +28,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
     try {
       final report = await api.generateReport();
       final books = await api.getAllBooks(limit: 10000, offset: 0);
-      final users = await api.getAllUsers();
+      // final users = await api.getAllUsers();
       setState(() {
         _report = report;
-        _recentBooks = books.take(5).toList(); // Just take top 5 for recent
+        _recentBooks = books.take(5).toList();
       });
     } catch (e) {
       if (!mounted) return;
@@ -133,7 +133,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(28),
@@ -144,7 +149,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.white, color.withOpacity(0.02)],
+            colors: [Colors.white, color.withValues(alpha: 0.02)],
           ),
         ),
         child: Column(
@@ -153,7 +158,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.zero,
               ),
               child: Icon(icon, color: color, size: 28),
@@ -224,29 +229,46 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   (entry) => Column(
                     children: [
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                         leading: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.05),
+                            color: AppColors.primary.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.zero,
                           ),
-                          child: const Icon(Icons.book_rounded, color: AppColors.primary),
+                          child: const Icon(
+                            Icons.book_rounded,
+                            color: AppColors.primary,
+                          ),
                         ),
                         title: Text(
                           entry.value.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
-                        subtitle: Text("${entry.value.author} • ${entry.value.genre}"),
+                        subtitle: Text(
+                          "${entry.value.author} • ${entry.value.genre}",
+                        ),
                         trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.background,
                             borderRadius: BorderRadius.zero,
                           ),
                           child: Text(
                             entry.value.publicationYear.toString(),
-                            style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),

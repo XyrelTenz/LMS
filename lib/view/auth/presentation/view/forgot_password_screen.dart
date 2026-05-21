@@ -284,6 +284,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       isVisible
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
+                      color: AppColors.textLight,
                     ),
                     onPressed: onToggleVisibility,
                   )

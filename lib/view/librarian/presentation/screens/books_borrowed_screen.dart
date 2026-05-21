@@ -29,7 +29,6 @@ class _BooksBorrowedScreenState extends State<BooksBorrowedScreen> {
     setState(() => _isLoading = true);
     try {
       final allBorrowings = await api.getAllBorrowings();
-      // Filter for approved and not returned borrowings
       final borrowed = allBorrowings
           .where(
             (b) => b.status == domain.BorrowStatus.approved && !b.isReturned,
@@ -131,7 +130,7 @@ class _BooksBorrowedScreenState extends State<BooksBorrowedScreen> {
                 hintText: "Search by book ID, student name, or student ID...",
                 prefixIcon: const Icon(Icons.search, color: AppColors.primary),
                 filled: true,
-                fillColor: AppColors.background.withOpacity(0.5),
+                fillColor: AppColors.background.withValues(alpha: 0.5),
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: Colors.grey),
@@ -197,7 +196,7 @@ class _BooksBorrowedScreenState extends State<BooksBorrowedScreen> {
             borderRadius: BorderRadius.zero,
             side: BorderSide(
               color: isOverdue
-                  ? AppColors.error.withOpacity(0.3)
+                  ? AppColors.error.withValues(alpha: 0.3)
                   : Colors.grey[200]!,
             ),
           ),
@@ -209,8 +208,8 @@ class _BooksBorrowedScreenState extends State<BooksBorrowedScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isOverdue
-                        ? AppColors.error.withOpacity(0.1)
-                        : AppColors.primary.withOpacity(0.1),
+                        ? AppColors.error.withValues(alpha: 0.1)
+                        : AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.zero,
                   ),
                   child: Icon(
@@ -290,7 +289,7 @@ class _BooksBorrowedScreenState extends State<BooksBorrowedScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.1),
+                            color: AppColors.error.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.zero,
                           ),
                           child: Text(
@@ -336,7 +335,7 @@ class _BooksBorrowedScreenState extends State<BooksBorrowedScreen> {
       label: Text(label),
       style:
           ElevatedButton.styleFrom(
-            backgroundColor: color.withOpacity(0.1),
+            backgroundColor: color.withValues(alpha: 0.1),
             foregroundColor: color,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -344,7 +343,9 @@ class _BooksBorrowedScreenState extends State<BooksBorrowedScreen> {
               borderRadius: BorderRadius.zero,
             ),
           ).copyWith(
-            overlayColor: WidgetStateProperty.all(color.withOpacity(0.05)),
+            overlayColor: WidgetStateProperty.all(
+              color.withValues(alpha: 0.05),
+            ),
           ),
     );
   }

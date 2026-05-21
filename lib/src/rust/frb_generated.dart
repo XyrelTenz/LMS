@@ -1259,8 +1259,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Borrowing dco_decode_borrowing(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 13)
-      throw Exception('unexpected arr length: expect 13 but see ${arr.length}');
+    if (arr.length != 14)
+      throw Exception('unexpected arr length: expect 14 but see ${arr.length}');
     return Borrowing(
       id: dco_decode_String(arr[0]),
       bookId: dco_decode_String(arr[1]),
@@ -1275,6 +1275,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       returnStatus: dco_decode_return_status(arr[10]),
       conditionNotes: dco_decode_opt_String(arr[11]),
       bookTitle: dco_decode_opt_String(arr[12]),
+      bookIsbn: dco_decode_opt_String(arr[13]),
     );
   }
 
@@ -1571,6 +1572,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_returnStatus = sse_decode_return_status(deserializer);
     var var_conditionNotes = sse_decode_opt_String(deserializer);
     var var_bookTitle = sse_decode_opt_String(deserializer);
+    var var_bookIsbn = sse_decode_opt_String(deserializer);
     return Borrowing(
       id: var_id,
       bookId: var_bookId,
@@ -1585,6 +1587,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       returnStatus: var_returnStatus,
       conditionNotes: var_conditionNotes,
       bookTitle: var_bookTitle,
+      bookIsbn: var_bookIsbn,
     );
   }
 
@@ -1939,6 +1942,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_return_status(self.returnStatus, serializer);
     sse_encode_opt_String(self.conditionNotes, serializer);
     sse_encode_opt_String(self.bookTitle, serializer);
+    sse_encode_opt_String(self.bookIsbn, serializer);
   }
 
   @protected

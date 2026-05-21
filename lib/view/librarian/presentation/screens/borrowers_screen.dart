@@ -25,9 +25,9 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
   void initState() {
     super.initState();
     _borrowerDataSource = BorrowerDataSource(
-      borrowings: [], 
-      onRemind: (_) {}, 
-      onForceReturn: (_) {}
+      borrowings: [],
+      onRemind: (_) {},
+      onForceReturn: (_) {},
     );
     _loadData();
   }
@@ -44,7 +44,12 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      FeedbackUtils.show(context, title: "Load Error", message: e.toString(), type: FeedbackType.error);
+      FeedbackUtils.show(
+        context,
+        title: "Load Error",
+        message: e.toString(),
+        type: FeedbackType.error,
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -53,10 +58,19 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
   void _updateDataSource() {
     // Filter: Only students who have active (not returned) borrowings
     final studentBorrowings = _allBorrowings.where((b) {
-      final user = _users.firstWhere((u) => u.id == b.userId, orElse: () => _users[0]);
-      final matchesSearch = b.borrowerName.toLowerCase().contains(_searchController.text.toLowerCase()) || 
-                           b.userId.toLowerCase().contains(_searchController.text.toLowerCase());
-      return user.role == domain.UserRole.student && !b.isReturned && b.status == domain.BorrowStatus.approved && matchesSearch;
+      final user = _users.firstWhere(
+        (u) => u.id == b.userId,
+        orElse: () => _users[0],
+      );
+      final matchesSearch =
+          b.borrowerName.toLowerCase().contains(
+            _searchController.text.toLowerCase(),
+          ) ||
+          b.userId.toLowerCase().contains(_searchController.text.toLowerCase());
+      return user.role == domain.UserRole.student &&
+          !b.isReturned &&
+          b.status == domain.BorrowStatus.approved &&
+          matchesSearch;
     }).toList();
 
     _borrowerDataSource = BorrowerDataSource(
@@ -67,22 +81,33 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
   }
 
   void _printBorrowersReport() {
-    final activeBorrowings = _allBorrowings.where((b) => 
-      !b.isReturned && b.status == domain.BorrowStatus.approved
-    ).toList();
+    final activeBorrowings = _allBorrowings
+        .where((b) => !b.isReturned && b.status == domain.BorrowStatus.approved)
+        .toList();
 
     PrintReportUtils.showPrintPreview(
       context,
       title: "Active Borrowers List",
-      subtitle: "List of all students with unreturned books as of ${DateFormat('MMM dd, yyyy').format(DateTime.now())}",
-      columns: ["Student Name", "Student ID", "Book ID", "Borrow Date", "Due Date"],
-      data: activeBorrowings.map((b) => [
-        b.borrowerName,
-        b.userId,
-        b.bookId,
-        DateFormat('MMM dd, yyyy').format(b.borrowDate.toLocal()),
-        DateFormat('MMM dd, yyyy').format(b.dueDate.toLocal()),
-      ]).toList(),
+      subtitle:
+          "List of all students with unreturned books as of ${DateFormat('MMM dd, yyyy').format(DateTime.now())}",
+      columns: [
+        "Student Name",
+        "Student ID",
+        "Book ID",
+        "Borrow Date",
+        "Due Date",
+      ],
+      data: activeBorrowings
+          .map(
+            (b) => [
+              b.borrowerName,
+              b.userId,
+              b.bookId,
+              DateFormat('MMM dd, yyyy').format(b.borrowDate.toLocal()),
+              DateFormat('MMM dd, yyyy').format(b.dueDate.toLocal()),
+            ],
+          )
+          .toList(),
     );
   }
 
@@ -93,13 +118,19 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
       FeedbackUtils.show(
         context,
         title: "Reminder Sent",
-        message: "A return reminder has been successfully sent to ${borrowing.borrowerName}.",
+        message:
+            "A return reminder has been successfully sent to ${borrowing.borrowerName}.",
         type: FeedbackType.success,
       );
       _loadData();
     } catch (e) {
       if (!mounted) return;
-      FeedbackUtils.show(context, title: "Reminder Failed", message: e.toString(), type: FeedbackType.error);
+      FeedbackUtils.show(
+        context,
+        title: "Reminder Failed",
+        message: e.toString(),
+        type: FeedbackType.error,
+      );
     }
   }
 
@@ -121,7 +152,8 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         title: const Text("Force Return Book"),
         content: const Text(
-            "Are you sure you want to force return this book? This will bypass the student request flow."),
+          "Are you sure you want to force return this book? This will bypass the student request flow.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -194,50 +226,68 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
                           GridColumn(
                             columnName: 'name',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Student Name',
-                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Student Name',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'id',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Student ID',
-                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Student ID',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'bookId',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Book ID',
-                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Book ID',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'borrowDate',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Borrow Date',
-                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Borrow Date',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'dueDate',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.centerLeft,
-                                child: const Text('Due Date',
-                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Due Date',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                           GridColumn(
                             columnName: 'action',
                             label: Container(
-                                padding: const EdgeInsets.all(16),
-                                alignment: Alignment.center,
-                                child: const Text('Actions',
-                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                'Actions',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -259,10 +309,10 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
             Text(
               "Borrowers Management",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.textDark,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
-                  ),
+                color: AppColors.textDark,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -279,7 +329,11 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
               color: AppColors.textDark,
               borderRadius: BorderRadius.zero,
             ),
-            child: const Icon(Icons.print_outlined, color: Colors.white, size: 24),
+            child: const Icon(
+              Icons.print_outlined,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
         ),
       ],
@@ -303,12 +357,15 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
                 hintText: "Search by student name or ID...",
                 prefixIcon: const Icon(Icons.search, color: AppColors.primary),
                 filled: true,
-                fillColor: AppColors.background.withOpacity(0.5),
+                fillColor: AppColors.background.withValues(alpha: 0.5),
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: Colors.grey),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
               onChanged: (val) => setState(() {
                 _updateDataSource();
@@ -322,20 +379,30 @@ class _BorrowersScreenState extends State<BorrowersScreen> {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return ElevatedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 18),
       label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
-        foregroundColor: color,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      ).copyWith(
-        overlayColor: WidgetStateProperty.all(color.withOpacity(0.05)),
-      ),
+      style:
+          ElevatedButton.styleFrom(
+            backgroundColor: color.withValues(alpha: 0.1),
+            foregroundColor: color,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+          ).copyWith(
+            overlayColor: WidgetStateProperty.all(
+              color.withValues(alpha: 0.05),
+            ),
+          ),
     );
   }
 }
@@ -347,16 +414,22 @@ class BorrowerDataSource extends DataGridSource {
     required this.onForceReturn,
   }) {
     _dataGridRows = borrowings.map<DataGridRow>((b) {
-      return DataGridRow(cells: [
-        DataGridCell<String>(columnName: 'name', value: b.borrowerName),
-        DataGridCell<String>(columnName: 'id', value: b.userId),
-        DataGridCell<String>(columnName: 'bookId', value: b.bookId),
-        DataGridCell<String>(
+      return DataGridRow(
+        cells: [
+          DataGridCell<String>(columnName: 'name', value: b.borrowerName),
+          DataGridCell<String>(columnName: 'id', value: b.userId),
+          DataGridCell<String>(columnName: 'bookId', value: b.bookId),
+          DataGridCell<String>(
             columnName: 'borrowDate',
-            value: DateFormat('MMM dd, yyyy').format(b.borrowDate.toLocal())),
-        DataGridCell<DateTime>(columnName: 'dueDate', value: b.dueDate.toLocal()),
-        DataGridCell<domain.Borrowing>(columnName: 'action', value: b),
-      ]);
+            value: DateFormat('MMM dd, yyyy').format(b.borrowDate.toLocal()),
+          ),
+          DataGridCell<DateTime>(
+            columnName: 'dueDate',
+            value: b.dueDate.toLocal(),
+          ),
+          DataGridCell<domain.Borrowing>(columnName: 'action', value: b),
+        ],
+      );
     }).toList();
   }
 
@@ -413,14 +486,23 @@ class BorrowerDataSource extends DataGridSource {
             children: [
               IconButton(
                 icon: Icon(
-                  borrowing.hasReminder ? Icons.notifications_active : Icons.notifications_active_outlined,
-                  color: borrowing.hasReminder ? Colors.orange : AppColors.primary,
+                  borrowing.hasReminder
+                      ? Icons.notifications_active
+                      : Icons.notifications_active_outlined,
+                  color: borrowing.hasReminder
+                      ? Colors.orange
+                      : AppColors.primary,
                 ),
-                tooltip: borrowing.hasReminder ? "Reminder Sent" : "Send Reminder",
+                tooltip: borrowing.hasReminder
+                    ? "Reminder Sent"
+                    : "Send Reminder",
                 onPressed: () => onRemind(borrowing),
               ),
               IconButton(
-                icon: const Icon(Icons.assignment_return_outlined, color: Colors.green),
+                icon: const Icon(
+                  Icons.assignment_return_outlined,
+                  color: Colors.green,
+                ),
                 tooltip: "Force Return",
                 onPressed: () => onForceReturn(borrowing),
               ),

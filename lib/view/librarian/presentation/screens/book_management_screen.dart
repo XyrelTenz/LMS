@@ -51,7 +51,10 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     }
 
     try {
-      final books = await api.getAllBooks(limit: _limit, offset: _currentPage * _limit);
+      final books = await api.getAllBooks(
+        limit: _limit,
+        offset: _currentPage * _limit,
+      );
       if (!mounted) return;
       setState(() {
         if (books.length < _limit) {
@@ -95,7 +98,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
               b.genre,
               b.publicationYear.toString(),
               b.isbn,
-              (b.copies ?? 1).toString(),
+              b.copies.toString(),
               b.isAvailable ? "Available" : "Borrowed",
             ],
           )
@@ -198,7 +201,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
       text: book?.publicationYear.toString(),
     );
     final isbnController = TextEditingController(text: book?.isbn);
-    final genreController = TextEditingController(text: book?.genre);
+    // final genreController = TextEditingController(text: book?.genre);
     final copiesController = TextEditingController(
       text: (book?.copies ?? 1).toString(),
     );
@@ -335,7 +338,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButtonFormField<String>(
-                                    value: selectedGenre,
+                                    initialValue: selectedGenre,
                                     decoration: const InputDecoration(
                                       labelText: "Genre",
                                       border: InputBorder.none,
@@ -412,7 +415,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                         const SizedBox(height: 16),
                         _buildInputField(
                           fineFeeController,
-                          "Fine Fee Amount (\$)",
+                          "Fine Fee Amount (₱)",
                           Icons.attach_money_outlined,
                           isNumber: true,
                         ),
@@ -446,18 +449,21 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                                   FeedbackUtils.show(
                                     context,
                                     title: "Validation Error",
-                                    message: "Book Title and Author cannot be empty.",
+                                    message:
+                                        "Book Title and Author cannot be empty.",
                                     type: FeedbackType.error,
                                   );
                                   return;
                                 }
 
                                 final isbnText = isbnController.text.trim();
-                                if (isbnText.length != 13 || double.tryParse(isbnText) == null) {
+                                if (isbnText.length != 13 ||
+                                    double.tryParse(isbnText) == null) {
                                   FeedbackUtils.show(
                                     context,
                                     title: "Validation Error",
-                                    message: "ISBN must be exactly 13 digits long.",
+                                    message:
+                                        "ISBN must be exactly 13 digits long.",
                                     type: FeedbackType.error,
                                   );
                                   return;
@@ -479,8 +485,16 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                                       imageUrl: imageController.text.isEmpty
                                           ? null
                                           : imageController.text,
-                                      fineFee: double.tryParse(fineFeeController.text) ?? 0.0,
-                                      maxBorrowDays: int.tryParse(maxBorrowDaysController.text) ?? 7,
+                                      fineFee:
+                                          double.tryParse(
+                                            fineFeeController.text,
+                                          ) ??
+                                          0.0,
+                                      maxBorrowDays:
+                                          int.tryParse(
+                                            maxBorrowDaysController.text,
+                                          ) ??
+                                          7,
                                     );
                                   } else {
                                     await api.updateBook(
@@ -502,17 +516,28 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                                         imageUrl: imageController.text.isEmpty
                                             ? null
                                             : imageController.text,
-                                        fineFee: double.tryParse(fineFeeController.text) ?? book.fineFee,
-                                        maxBorrowDays: int.tryParse(maxBorrowDaysController.text) ?? book.maxBorrowDays,
+                                        fineFee:
+                                            double.tryParse(
+                                              fineFeeController.text,
+                                            ) ??
+                                            book.fineFee,
+                                        maxBorrowDays:
+                                            int.tryParse(
+                                              maxBorrowDaysController.text,
+                                            ) ??
+                                            book.maxBorrowDays,
                                       ),
                                     );
                                   }
-                                  if (!mounted) return;
-                                  Navigator.pop(context);
+                                  if (!mounted) {
+                                    return;
+                                  } else {
+                                    Navigator.pop(context);
+                                  }
                                   _loadBooks();
                                 } catch (e) {
                                   if (!mounted) return;
-                                  FeedbackUtils.show(
+                                  await FeedbackUtils.show(
                                     context,
                                     title: "Save Error",
                                     message: e.toString(),

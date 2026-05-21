@@ -163,7 +163,7 @@ pub fn send_reminder(borrowing_id: String) -> Result<(), String> {
 /// Retrieves all borrowing history for a specific user ID.
 pub fn get_user_borrowings(user_id: String) -> Result<Vec<Borrowing>, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT borrowings.id, borrowings.book_id, borrowings.user_id, borrowings.borrower_name, borrowings.borrow_date, borrowings.return_date, borrowings.is_returned, borrowings.status, borrowings.due_date, borrowings.has_reminder, borrowings.return_status, borrowings.condition_notes, books.title FROM borrowings LEFT JOIN books ON books.id = borrowings.book_id WHERE borrowings.user_id = ?1")
+    let mut stmt = conn.prepare("SELECT borrowings.id, borrowings.book_id, borrowings.user_id, borrowings.borrower_name, borrowings.borrow_date, borrowings.return_date, borrowings.is_returned, borrowings.status, borrowings.due_date, borrowings.has_reminder, borrowings.return_status, borrowings.condition_notes, books.title, books.isbn FROM borrowings LEFT JOIN books ON books.id = borrowings.book_id WHERE borrowings.user_id = ?1")
         .map_err(|e| e.to_string())?;
 
     let borrowings = stmt
@@ -190,6 +190,7 @@ pub fn get_user_borrowings(user_id: String) -> Result<Vec<Borrowing>, String> {
                 return_status: row.get::<_, String>(10)?.into(),
                 condition_notes: row.get(11)?,
                 book_title: row.get(12)?,
+                book_isbn: row.get(13)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -202,7 +203,7 @@ pub fn get_user_borrowings(user_id: String) -> Result<Vec<Borrowing>, String> {
 /// Lists all currently pending borrow requests for librarian review.
 pub fn get_pending_borrowings() -> Result<Vec<Borrowing>, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT borrowings.id, borrowings.book_id, borrowings.user_id, borrowings.borrower_name, borrowings.borrow_date, borrowings.return_date, borrowings.is_returned, borrowings.status, borrowings.due_date, borrowings.has_reminder, borrowings.return_status, borrowings.condition_notes, books.title FROM borrowings LEFT JOIN books ON books.id = borrowings.book_id WHERE borrowings.status = 'Pending'")
+    let mut stmt = conn.prepare("SELECT borrowings.id, borrowings.book_id, borrowings.user_id, borrowings.borrower_name, borrowings.borrow_date, borrowings.return_date, borrowings.is_returned, borrowings.status, borrowings.due_date, borrowings.has_reminder, borrowings.return_status, borrowings.condition_notes, books.title, books.isbn FROM borrowings LEFT JOIN books ON books.id = borrowings.book_id WHERE borrowings.status = 'Pending'")
         .map_err(|e| e.to_string())?;
 
     let borrowings = stmt
@@ -229,6 +230,7 @@ pub fn get_pending_borrowings() -> Result<Vec<Borrowing>, String> {
                 return_status: row.get::<_, String>(10)?.into(),
                 condition_notes: row.get(11)?,
                 book_title: row.get(12)?,
+                book_isbn: row.get(13)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -241,7 +243,7 @@ pub fn get_pending_borrowings() -> Result<Vec<Borrowing>, String> {
 /// Retrieves all borrowing records across the entire library system.
 pub fn get_all_borrowings() -> Result<Vec<Borrowing>, String> {
     let conn = sqlite::init_db().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT borrowings.id, borrowings.book_id, borrowings.user_id, borrowings.borrower_name, borrowings.borrow_date, borrowings.return_date, borrowings.is_returned, borrowings.status, borrowings.due_date, borrowings.has_reminder, borrowings.return_status, borrowings.condition_notes, books.title FROM borrowings LEFT JOIN books ON books.id = borrowings.book_id")
+    let mut stmt = conn.prepare("SELECT borrowings.id, borrowings.book_id, borrowings.user_id, borrowings.borrower_name, borrowings.borrow_date, borrowings.return_date, borrowings.is_returned, borrowings.status, borrowings.due_date, borrowings.has_reminder, borrowings.return_status, borrowings.condition_notes, books.title, books.isbn FROM borrowings LEFT JOIN books ON books.id = borrowings.book_id")
         .map_err(|e| e.to_string())?;
 
     let borrowings = stmt
@@ -268,6 +270,7 @@ pub fn get_all_borrowings() -> Result<Vec<Borrowing>, String> {
                 return_status: row.get::<_, String>(10)?.into(),
                 condition_notes: row.get(11)?,
                 book_title: row.get(12)?,
+                book_isbn: row.get(13)?,
             })
         })
         .map_err(|e| e.to_string())?

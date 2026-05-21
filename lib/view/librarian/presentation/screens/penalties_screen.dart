@@ -138,7 +138,9 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: penalty.isPaid ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                    color: penalty.isPaid
+                        ? Colors.green.withValues(alpha: 0.02)
+                        : Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.zero,
                   ),
                   child: Icon(
@@ -152,7 +154,7 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Amount: \$${penalty.amount.toStringAsFixed(2)}",
+                        "Amount: ₱${penalty.amount.toStringAsFixed(2)}",
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
